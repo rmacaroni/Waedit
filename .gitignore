@@ -1,0 +1,15 @@
+# Build directories
+/src/bin/
+/src/obj/
+
+# Visual Studio temporary files
+*.user
+*.suo
+*.vssscc
+*.vspscc
+*.pdb
+.vs/
+
+# Backup files
+*.bak
+

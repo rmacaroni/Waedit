@@ -1,0 +1,3468 @@
+<html>
+
+  <head>
+  <style type="text/css">
+    table, th, td
+    {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+    </style>
+  </head>
+
+  <body>
+
+    <center> <h1> New Waedit Development Diary </h1> </center>
+
+    <h3> Early July, 2016 </h3>
+
+    <p> Make a new version of Waedit with the following goals in mind: </p>
+
+    <ol>
+
+      <li> Rewrite using C# and .NET primarily as a learning exercise, but also
+        to maybe extend its viability by a few years.  </li>
+
+      <li> Fix to remember screen position between invocations.  </li>
+
+      <li> Fix to handle arbitrarily long lines by scrolling horizontally.
+        </li>
+
+      <li> Approach true AEDIT compatibility more closely by:
+
+      <ul>
+
+        <li> Implementing macros.  </li>
+
+        <li> Implementing the Calc command.  </li>
+
+        <li> Paying close attention to the detailed behavior of the various
+          keys and editing features.  (Note that the D2400 machine has a copy
+          of the official MS-DOS version of AEDIT created by Intel.  Use it for
+          reference.) </li>
+
+      </ul>
+
+      <li> Maybe add a feature to optionally display line numbers next to the
+        text being edited.  </li>
+
+    </ol>
+
+    <h2> General Approach </h2>
+
+    <ol>
+
+      <li> Try to design the whole thing first.  (What an idea!) </li>
+
+      <li> Don't code anything that's already available in .NET or elsewhere.
+        In particular, try to use an off-the-shelf expression evaluator package
+        as the basis for the Calc command.  </li>
+
+      <li> Demonstrate anything that looks difficult in C# (which might be
+        everything, given my current C# experience level!) with small,
+        throwaway test programs.  </li>
+
+      <li> Make a first revision with (approximately) the same features as the
+        current one, but with horizontal scrolling and screen position
+        remembering.  </li>
+
+      <li> Try to make sure everything really matches the real AEDIT.  </li>
+ 
+      <li> Add macros.  </li>
+
+      <li> Try to make sure everything really matches the real AEDIT.  </li>
+
+      <li> Add the calc function.  </li>
+
+      <li> Try to make sure everything really matches the real AEDIT.  </li>
+
+      <li> Hack and/or rewrite as needed for speed, elegance, maintainability,
+        etc.  </li>
+
+      <li> Relax with a root beer.  </li>
+
+    </ol>
+
+    <h2> Preliminary Design Ideas </h2>
+
+    <ol>
+
+      <li> For the first iteration, make the main text buffer a simple
+        character array (a list of bytes, actually, so that it can grow as
+        needed) that exactly (except for EOL markers) matches what's
+        read/written from/to the disk files.  Encapsulate this somehow so it
+        can be replaced with a more efficient scheme later if needed.  So the
+        interface here would be simple things like add/delete/get character,
+        add/delete/get block, find character/block, etc.  So nothing fancy like
+        search and replace or paragraph formatting, for example.  That kind of
+        thing would be done at a higher level.  </li>
+
+      <li> Fix to handle files where EOL is indicated by LF only, CR/LF pairs,
+        or CR only.  Figure out the file type by analyzing the first EOL in the
+        file.  Default to CR/LF pairs for new files.  (This is how Mbedit
+        works.) Once the EOL type is determined, change all instances of EOL in
+        the text buffer to some special one-byte code so that EOLs work like
+        any other character when searching or moving the cursor.  Then maybe
+        (???) convert the special codes back to the original EOL characters
+        (LF, CR, or CR/LF) when writing back to the file.  </li>
+
+      <li> To the extent possible, design so the main guts of the editor
+        doesn't know or care if it's getting its input from the user or from a
+        macro.  </li>
+
+      <li> Within the editor, represent various keystrokes using the same codes
+        that come from the keyboard itself.  Decode macro files as they are
+        read, and covert macro sequences to macro form (i.e., the form stored
+        in the macro files) only during the Macro Save and Macro Insert
+        commands.  </li>
+
+      <li> Forget about all the nonsense in the real AEDIT that allows the user
+        to map various fucntions to different keys.  This was probably done to
+        accommodate different video terminals, and we shouldn't have to worry
+        about this anymore on Windows machines. Among other things, this means
+        we won't deal with the configuration commands specified in Chapter 9
+        of the Aedit manual. </li>
+
+      <li> Forget about the real AEDIT's "Other" feature.  The natural way to
+        do the same thing under Windows would be to just open another copy of
+        the editor.  </li>
+
+      <li> Likewise forget about the real AEDIT's "Window" feature.  If
+        something similar is desired, handle it with a draggable splitter as
+        found in Word and Excel.  </li>
+
+      <li> Ctrl-C is supposed to interrupt macro execution.  That means we'll
+        have to somehow monitor the keyboard for incoming Ctrl-C characters and
+        signal the macro executor when they occur.  Maybe this means multiple
+        threads, or maybe there's some simpler way to do it.  </li>
+
+      <li> For the command executor, I think we can use a more or less direct
+        translation from C++ to C# of the big state machine that's in the
+        original Waedit.  </li>
+
+      <li> Likewise, we can probably also use data structures similar to those
+        in the original Waedit, with modifications as needed to accommodate
+        horizonal scrolling.  </li>
+
+      <li> In order for Macro Create and Macro Insert to work right, we'll have
+        to abandon (or at least modify) the dialog-based forms for entering
+        find and replace strings.  Instead of letting the user enter these
+        strings into Text boxes using features of the normal Windows GUI, I
+        think we'll need to implement a little line editor similar to that used
+        by both Mbedit and the real AEDIT.  This can probably fit into the same
+        state machine as everything else.  </li>
+
+    </ol>
+
+    <h3> July 21, 2016 </h3>
+
+    <p> The original Waedit managed input from the keyboard by handling OnChar
+      and OnKeyDown messages from Windows.  In order to implement the macros in
+      a straightforward way, I think we need to turn things around so the main
+      loop of the editor can request keystrokes when it needs them, rather than
+      having it set up to handle each keystroke as it appears.  This will also
+      help with the correct handling of Ctrl-C according to the Intel AEDIT
+      manual.  (The original Waedit doesn't handle Ctrl-C at all.) </p>
+
+    <p> Without knowing exactly how this could work in C# and without diving
+      too deeply into the details this early in the game, let's assume some
+      sort of input processor that will serve keystrokes one at a time upon
+      request from the editor's main loop.  Each time a keystroke is requested,
+      this mechanism will: </p>
+
+    <ul>
+
+      <li> Grab new input from the physical keyboard and insert the received
+        keystrokes into a FIFO buffer.  </li>
+
+      <li> When a Ctrl-C is received, clear the FIFO buffer and immediately
+        return the Ctrl-C.  </li>
+
+      <li> If a macro is being executed, return the next character from the
+        macro.  </li>
+
+      <li> If macro execution is not under way and the FIFO is not empty,
+        return the oldest entry in the FIFO.  Otherwise spin waiting for the
+        next keystroke from the physical keyboard.  </li>
+
+    </ul>
+
+    <p> Something like this: </p>
+
+    <center> <p> <img src="get_keystroke.gif" /> </p> </center>
+
+    <p> Depending on how C# and .NET work, we may need to break this into two
+      threads ...  one that processes Windows messages and maintains the FIFO
+      buffer, and another that does everything else.  In that case, it would
+      look more like the following.  Note that the FIFO would have to be
+      protected against concurrent access by the two threads.  <b>Update: This
+      second arrangement is indeed the better of the two.  </b> </p>
+
+    <center> <p> <img src="get_keystroke_2.gif" /> </p> </center>
+
+    <h3> July 23, 2016 </h3>
+
+    <p> So how do we handle debug output with C# and .NET now that serial ports
+      are a thing of the past?  The Trace and Debug classes in .NET make this
+      real easy.  Here is a simple program that shows the Debug class in use.
+      Be sure to include /d:DEBUG if compling from the command line, or build
+      the Debug configuration from the IDE. </p>
+
+<pre>
+/* ////////////////////////////////////////////////////////////////////////////
+			     Debug and Trace Demo
+//////////////////////////////////////////////////////////////////////////// */
+
+/*  Be sure to include /d:DEBUG if compling from the command line, or build the
+    Debug configuration from the IDE.  */
+
+using System.Diagnostics;
+public class Hello1
+{
+    public static void Main()
+    {
+
+/*  Set up trace listeners as desired.  In a forms-based application, it works
+    to do this in the form's Load handler  */
+
+    /*  For debug output to a console.  If you want to do this, you'll need to
+    	use the IDE to set the program's Output Type to Console Application in
+	the project's properties.  */
+
+        TextWriterTraceListener tr1 = new
+            TextWriterTraceListener(System.Console.Out);
+        Debug.Listeners.Add(tr1);
+
+    /* For debug output to a text file.  */
+        
+        TextWriterTraceListener tr2 = new
+            TextWriterTraceListener(System.IO.File.CreateText("Output.txt"));
+        Debug.Listeners.Add(tr2);
+
+    /*  Set up to flush the debug output after every write.  */
+
+        Debug.AutoFlush = true;
+
+        System.Console.WriteLine("Hello, World!");
+
+    /*  Sample debug output.  See also the Trace class if you want output even
+        for the Release configuration.  */
+
+        Debug.WriteLine("Debug output.");
+
+    }						// End Main()
+}						// End class Hello1
+</pre>
+
+    <h3> July 24, 2016 </h3>
+
+    <p> Now how about getting data from the keyboard in a forms-based C#
+      program?  Let's just hack at a small test program until we figure out how
+      to do it, like so:  </p>
+
+    <ul>
+
+      <li> Used Visual Studio 2008 to build a new C# Windows Forms
+        Application project.  It compiled into a program that
+        didn't do anything except show an empty window.  Noted
+        that it does close when you hit Alt-F4, so it's doing at
+        least some keyboard processing by default.  </li>
+
+      <li> Set the tabs in Visual Studio to match Waedit and made
+        a go.bat and a run.bat file for easy maintenance outside
+        the IDE.  </li>
+
+      <li> Set up KeyDown and KeyPress handlers for the main form, and learned
+        that:
+
+        <ul>
+
+          <li> Debug.WriteLine doesn't work the same way as Console.WriteLine.
+            Beware </li>
+
+          <li> Each keystroke (including those produced when you hold a key
+            down) that actually results in a printable character produces a
+            KeyDown event and a KeyPress event.  For these, you can get the
+            character produced from the KeyChar element of the
+            KeyPressEventArgs struture.  </li>
+
+          <li> Keystrokes that <i>don't</i> result in printable characters (the
+            arrows, PgUp, PgDn, Shift, Ctrl, etc.) don't result in KeyPress
+            events.  For these, you can learn which key was pressed from the
+            either of two members of the KeyEventArgs structure; the KeyCode
+            element returns values of an enum that's defined as part of the
+            .NET framework, while the KeyValue element returns numerical values
+            that correspond somehow with enum values returned by the KeyCode
+            element.  </li>
+
+        </ul>
+
+        This is similar enough to the way the original Waedit works, that I
+        think we'll want to use the same scheme that it did, where the KeyDown
+        handler will process the arrow keys, PgUp and PgDn, Home, and Delete,
+        where the KeyPress handler will process all the printable characters,
+        and the two handlers will funnel all the input into a single stream for
+        further processing.  Also (as in the original Waedit), we'll need to
+        translate the results obtained from the KeyDown handler into codes that
+        don't collide with the normal printable characters.  </li>
+
+    </ul>
+
+    <p> For the record, here's the what the test program looked like at this
+    point: </p>
+<pre>
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+namespace Test1
+{
+    public partial class Form1 : Form
+    {
+	public Form1()
+	{
+	    InitializeComponent();
+	}
+
+	private void Form1_Load(object sender, EventArgs e)
+	{
+            TextWriterTraceListener tr1 = new
+                TextWriterTraceListener(System.Console.Out);
+            Debug.Listeners.Add(tr1);
+        
+            TextWriterTraceListener tr2 = new
+                TextWriterTraceListener(System.IO.File.CreateText("Output.txt"));
+            Debug.Listeners.Add(tr2);
+
+            Debug.AutoFlush = true;
+	    Console.WriteLine("Form is loaded!");
+
+	}
+
+	private void Form1_KeyDown(object sender, KeyEventArgs e)
+	{
+	    Debug.WriteLine("In KeyDown()");
+	    Debug.WriteLine("KeyCode:  " + e.KeyCode);
+	    Debug.WriteLine("KeyData:  " + e.KeyData);
+	    Debug.WriteLine("KeyValue: " + e.KeyValue);
+	    Debug.WriteLine("");
+	}
+
+	private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+	{
+	    Debug.WriteLine("In KeyPress()");	
+	    Debug.WriteLine("KeyChar:      " + e.KeyChar);	
+	    Debug.WriteLine("Ascii Code:   " + (int)e.KeyChar);	
+	    Debug.WriteLine("Back to char: " + (char)((int)e.KeyChar));	
+	    Debug.WriteLine("");
+	}
+    }
+}
+</pre>
+
+    <h3> July 25, 2016 </h3>
+
+    <p> Quickly skimmed through the first chapters of the C# book aiming to
+      refresh my memory about any gotchas.  Most of the weirdness seems related
+      to classes and inheritance and all that sort of stuff, which probably
+      won't be an issue in this project.  So I think I'm good to go.  </p>
+
+    <p> Became concerned about how to represent the big text buffer.  Should it
+      be a simple array?  or a C# string?  or a List&lt;T&gt;?  or an
+      ArrayList?  or something else altogether?  A C# string would probably be
+      the easiest, but I'm a little worried that performance would suffer
+      because they're immutable (i.e., every change means a completely new
+      object is created on the heap to replace the old one).  Probably should
+      write some little test programs and see exactly how the different options
+      stack up.  </p>
+
+    <h3> July 26, 2016 </h3>
+
+    <p> A <b>simple array</b> probably doesn't make sense because we need a
+      container that will automatically expand with the text.  Further, the
+      docs for <b>ArrayList</b> say that "it does not always offer the best
+      performance".  So that kinda leaves the <b>List&lt;T&gt;</b> class and
+      the standard C# <b>string</b> type.  Let's see how those compare with
+      respect to performance.  </p>
+<pre>
+/* ------------------------------------------------------------------------- */
+/*                        List&lt;byte&gt; Performance Test			     */
+/* ------------------------------------------------------------------------- */
+
+using System;
+using System.Diagnostics;
+using System.Collections.Generic;
+
+class CTest
+{
+
+static void Main()
+{
+    Stopwatch	stopwatch = new Stopwatch();	// Stopwatch reference
+    int		i, j;				// Generic ints
+    List&lt;byte&gt;	s = new List&lt;byte&gt;();		// List&lt;byte&gt; reference
+
+    stopwatch.Start();				// Start the stopwatch
+
+    for (i=0; i<15; i++)		
+    {
+	for (j=0; j<100000; j++)
+	{
+	    s.Insert(0, (byte)'a');
+	}
+	Console.WriteLine("Elapsed time: {0}",
+	    stopwatch.Elapsed);
+    }						// End outer for
+
+    stopwatch.Stop();				// Stop the stopwatch and
+    Console.WriteLine("");			//  show the result
+    Console.WriteLine("Elapsed time: {0}",
+        stopwatch.Elapsed);
+
+}						// End Main()
+
+}						// End class CTest
+</pre>
+
+<p> The program above produced the output below.  </p>
+
+<pre>
+Elapsed time: 00:00:00.2046883
+Elapsed time: 00:00:00.7947538
+Elapsed time: 00:00:01.8017924
+Elapsed time: 00:00:03.3632831
+Elapsed time: 00:00:05.3885845
+Elapsed time: 00:00:07.8800388
+Elapsed time: 00:00:10.8124040
+Elapsed time: 00:00:14.3584433
+Elapsed time: 00:00:18.3875274
+Elapsed time: 00:00:22.6814844
+Elapsed time: 00:00:27.4114655
+Elapsed time: 00:00:32.5868050
+Elapsed time: 00:00:38.2060114
+Elapsed time: 00:00:44.2988388
+Elapsed time: 00:00:50.8329884
+
+Elapsed time: 00:00:50.8330319
+</pre>
+
+    <p> The same program, but set up to add characters to the string at the end
+      instead of the beginning, gave these results: </p>
+
+<pre>
+Elapsed time: 00:00:00.0009056
+Elapsed time: 00:00:00.0024973
+Elapsed time: 00:00:00.0029018
+Elapsed time: 00:00:00.0032305
+Elapsed time: 00:00:00.0035578
+Elapsed time: 00:00:00.0040232
+Elapsed time: 00:00:00.0043508
+Elapsed time: 00:00:00.0046774
+Elapsed time: 00:00:00.0050034
+Elapsed time: 00:00:00.0053300
+Elapsed time: 00:00:00.0059525
+Elapsed time: 00:00:00.0062797
+Elapsed time: 00:00:00.0066060
+Elapsed time: 00:00:00.0069345
+Elapsed time: 00:00:00.0072608
+
+Elapsed time: 00:00:00.0072680
+</pre>
+
+<pre>
+/* ------------------------------------------------------------------------- */
+/*                          string Performance Test			     */
+/* ------------------------------------------------------------------------- */
+
+using System;
+using System.Diagnostics;
+using System.Collections.Generic;
+
+class CTest
+{
+
+static void Main()
+{
+    Stopwatch	stopwatch = new Stopwatch();	// Stopwatch reference
+    int		i, j;				// Generic ints
+    string	s = "";				// A generic string
+
+    stopwatch.Start();				// Start the stopwatch
+
+    for (i=0; i<15; i++)		
+    {
+	for (j=0; j<100000; j++)
+	{
+	    s = s.Insert(0, "a");
+	}
+	Console.WriteLine("Elapsed time: {0}",
+	    stopwatch.Elapsed);
+    }						// End outer for
+
+    stopwatch.Stop();				// Stop the stopwatch and
+    Console.WriteLine("");
+    Console.WriteLine("Elapsed time: {0}",	//  show the result
+        stopwatch.Elapsed);
+
+}						// End Main()
+
+}						// End class CTest
+</pre>
+
+    <p> The program above produced the output below.  </p>
+
+<pre>
+Elapsed time: 00:00:01.7643056
+Elapsed time: 00:00:09.7498720
+Elapsed time: 00:00:23.9984336
+Elapsed time: 00:00:43.6202979
+Elapsed time: 00:01:09.0095000
+Elapsed time: 00:01:40.5190700
+Elapsed time: 00:02:17.4519352
+Elapsed time: 00:03:00.5453473
+Elapsed time: 00:03:51.1015402
+Elapsed time: 00:04:47.4492509
+Elapsed time: 00:05:49.4720254
+Elapsed time: 00:06:57.6580057
+Elapsed time: 00:08:12.1356746
+Elapsed time: 00:09:32.4937587
+Elapsed time: 00:10:59.1118258
+
+Elapsed time: 00:10:59.1125355
+</pre>
+
+    <p> The same program, but set up to add characters to the string at the end
+      instead of the beginning, gave these results: </p>
+
+<pre>
+Elapsed time: 00:00:01.6819460
+Elapsed time: 00:00:07.8604611
+Elapsed time: 00:00:19.7375848
+Elapsed time: 00:00:37.1306675
+Elapsed time: 00:00:59.7925154
+Elapsed time: 00:01:28.3447850
+Elapsed time: 00:02:02.5312413
+Elapsed time: 00:02:42.6216511
+Elapsed time: 00:03:28.9731681
+Elapsed time: 00:04:21.5991318
+Elapsed time: 00:05:21.7898596
+Elapsed time: 00:06:29.1973631
+Elapsed time: 00:07:46.8591299
+Elapsed time: 00:09:11.6428583
+Elapsed time: 00:10:44.1590171
+
+Elapsed time: 00:10:44.1593271
+</pre>
+
+    <p> Well, that makes it pretty clear that we don't want to use
+      a string for the big buffer!  So let's say it will be a
+      List&lt;byte&gt; and press on from there.  </p>
+
+    <p> Skimmed through another C# book, then started worrying about how to set
+      up and run two threads--one to handle the UI and one to run the editor,
+      as hinted at on July 21.  Found an internet example <a
+      href="http://www.albahari.com/threading/part2.aspx#_AutoResetEvent">here</a>
+      of a producer/consumer pattern that uses an AutoResetEvent object for
+      synchronization.  </p>
+
+    <h3> July 27, 2016 </h3>
+
+    <p> Here's how we might use the producer/consumer pattern to handle
+      keyboard input.  For simplicity, we'll lump everything into the Form1.cs
+      file for this example.  There will be time enough later to figure out how
+      to break everything into appropriate modules.  </p>
+
+<pre>
+/* ////////////////////////////////////////////////////////////////////////////
+			      Keyboard Input Test
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	THis example shows how we'll probably handle keyboard intput in
+		the new Waedit program.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis, with big hints from the example
+				   found here:
+
+				  http://www.albahari.com/threading/part2.aspx
+//////////////////////////////////////////////////////////////////////////// */
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Windows.Forms;
+
+namespace kbtest
+{
+
+public partial class Form1 : Form
+{
+
+/* ////////////////////////////////////////////////////////////////////////////
+			       Names for Numbers
+//////////////////////////////////////////////////////////////////////////// */
+
+public const byte MVK_PGUP   = 0x80;	// Codes for some special keys that
+public const byte MVK_PGDN   = 0x81;	//  will coexist peacefully with the
+public const byte MVK_HOME   = 0x82;	//  normal ASCII character set.
+public const byte MVK_LEFT   = 0x83;
+public const byte MVK_UP     = 0x84;
+public const byte MVK_RIGHT  = 0x85;
+public const byte MVK_DOWN   = 0x86;
+public const byte MVK_DELETE = 0x87;
+
+/* ////////////////////////////////////////////////////////////////////////////
+				  Constructor
+//////////////////////////////////////////////////////////////////////////// */
+
+public Form1()
+{
+    InitializeComponent();
+}						// End constructor
+
+/* ////////////////////////////////////////////////////////////////////////////
+				 Form1_Load()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	The framework calls this function before the form is displayed.
+		Here we start the thread that simulates the main editor loop.
+
+NOTE:		As this program is written, the EditorLoop thread continues to
+                run even after the program window has been closed.  A real
+                program would have to shut down the EditorLoop thread in some
+                graceful way.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// */
+
+private void Form1_Load(object sender, EventArgs e)
+{
+    Thread t;
+
+    t = new Thread(EditorGuts.MainEditorLoop);	// Make a new thread
+    t.Start();					// Start it
+}						// End Form1_Load()
+
+/* ////////////////////////////////////////////////////////////////////////////
+			       Form1_KeyPress()
+			       Form1_KeyDown()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	KeyPress() is called for normal keys that produce printable
+		characters.  We queue them up for processing by the editor.
+
+		We use KeyDown() to handle special keys (the arrows, Home, Del,
+		etc.) that don't produce printable characters.  Here we
+		translate their key codes into codes that don't collide with
+		the normal printable characters before adding them to the
+		input queue.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// */
+
+private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+{
+    KeyboardBuffer.QueueKey((byte)e.KeyChar);
+}						// End Form1KeyPress()
+
+/* ///////////////////////////////////////////////////////////////////////// */
+
+private void Form1_KeyDown(object sender, KeyEventArgs e)
+{
+    switch (e.KeyCode)
+    {
+	case Keys.PageUp:	KeyboardBuffer.QueueKey(MVK_PGUP);	break;
+	case Keys.PageDown:	KeyboardBuffer.QueueKey(MVK_PGDN);	break;
+	case Keys.Home:		KeyboardBuffer.QueueKey(MVK_HOME);	break;
+	case Keys.Left:		KeyboardBuffer.QueueKey(MVK_LEFT);	break;
+	case Keys.Up:		KeyboardBuffer.QueueKey(MVK_UP);	break;
+	case Keys.Right:	KeyboardBuffer.QueueKey(MVK_RIGHT);	break;
+	case Keys.Down:		KeyboardBuffer.QueueKey(MVK_DOWN);	break;
+	case Keys.Delete:	KeyboardBuffer.QueueKey(MVK_DELETE);	break;
+    }						// End switch
+}						// End Form1_KeyDown()
+
+}						// End class Form1
+
+public class KeyboardBuffer
+{
+
+/* ////////////////////////////////////////////////////////////////////////////
+				Class Variables
+//////////////////////////////////////////////////////////////////////////// */
+
+private static Queue&lt;byte&gt; keyboardBuffer = new Queue&lt;byte&gt;();
+private static object bufferLock = new object();
+private static EventWaitHandle waitHandle = new AutoResetEvent(false);
+
+/* ////////////////////////////////////////////////////////////////////////////
+				  QueueKey()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	The KeyPress and KeyDown handlers call this function to put
+                incoming keystrokes into a FIFO buffer that's read by the main
+                editor loop thread.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// */
+
+public static void QueueKey(byte herb)
+{
+    lock (bufferLock)
+    {
+	if (herb == 0x03)			// Toss anything in the FIFO if
+	{					//  the user hits Ctrl-C
+	    keyboardBuffer.Clear();
+	}
+	keyboardBuffer.Enqueue(herb);		// Add new byte to the FIFO
+    }						// End lock
+    waitHandle.Set();				// Signal new byte availability
+}						// End QueueKey()
+
+/* ////////////////////////////////////////////////////////////////////////////
+			     GetKeyFromKeyboard()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	The main editor loop calls this function to get input keys.  If
+                no keyboard input is available, this function blocks.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// */
+
+public static byte GetKeyFromKeyboard()
+{
+    while (true)
+    {
+	lock (bufferLock)
+	{
+	    if (keyboardBuffer.Count > 0)
+	    {
+		return keyboardBuffer.Dequeue();
+	    }
+	}					// End lock
+    waitHandle.WaitOne();			// Block for non-empty FIFO
+    }						// End while
+}						// End GetKeyFromKeyboard()
+
+}						// End class KeyboardBuffer
+
+public class EditorGuts
+{
+
+/* ////////////////////////////////////////////////////////////////////////////
+			       MainEditorLoop()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	This function runs forever in its own thread, repeatedly
+                grabbing input--either from the keyboard or from an executing
+                macro--and processing the keystrokes one by one.
+
+NOTE:		In the real program, the main editor loop will call a
+                GetKeystroke() routine that knows about macros.  If a macro is
+                running, GetKeystroke() will grab input from the macro.
+                Otherwise, it will call GetKeyFromKeyboard() as needed to, um,
+                get a key from the keyboard.  There are hints about this near
+                the end of the development diary entry for July 21, 2016.
+
+NOTE:		Don't forget to somehow terminate this thread when the
+		application closes.
+
+REVISIONS:	27 Jul 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// */
+
+public static void MainEditorLoop()
+{
+    byte herb;					// Input character
+
+    while (true)
+    {
+	herb =					// Get next character
+	    KeyboardBuffer.GetKeyFromKeyboard();
+	Console.WriteLine(herb);		// Do something with it
+	Thread.Sleep(500);			// Pretend it took a long time
+    }
+}						// End MainEditorLoop
+
+}						// End class EditorGuts
+
+}						// End namespace kbtest
+</pre>
+
+    <p> Now let's play around a little bit to see what it takes to write some
+      text and display a cursor on the form.  If we can get that sort of nailed
+      down, then I think we're ready to identify some appropriate classes and
+      start on the real design.  Based on the original Waedit, here are some of
+      the things we'll need to think about when dealing with the display: </p>
+
+    <ul>
+
+      <li> The size of the form's client area.  <b>The form has a ClientSize
+        property that contains the size (in pixels) of its client area.  </b>
+        </li>
+
+      <li> Given the current font, the size of a character cell.  <b>The font
+        has a Height property that gives the height.</b> To get the width, we
+        have to call the text renderer's MeasureText() function.  <b>See the
+        code example below in the entry for July 28.</b> </li>
+
+      <li> Which line appears at the top of the form.  </li>
+
+      <li> Which column appears at the left edge of the form.  </li>
+
+      <li> The beginning and end of any text being selected.  </li>
+
+      <li> Colors for normal text, the background, the alignment bars, the
+        selected text, etc.  </li>
+
+      <li> The cursor location.  </li>
+
+      <li> C# equivalents for TextOut, text and background color setting
+        functions, area fill and line drawing functions, etc.  <b> For at least
+        part of this, see the code example below in the entry for July 28.</b>
+        </li>
+
+      <li> The width of any easement we may want to leave around the text so it
+        doesn't jam all the way up to the edge of the client area.  This was
+        called the EDGE_OFFSET in the original Waedit.  </li>
+
+    </ul>
+
+    <h3> July 28, 2016 </h3>
+
+    <p> Here's some prototype code that answers some/most/all of the hard
+      questions from yesterday.  </p>
+
+<pre>
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+namespace grafix
+{
+public partial class Form1 : Form
+{
+
+public Form1()
+{
+    InitializeComponent();
+}
+
+private void button1_Click(object sender, EventArgs e)
+{
+
+    int		i;				// A generic integer
+    Font	font = null;			// A generic Font
+    int		lineSpacing;
+    float	lineSpacingPixel = 0;
+    Point	point = new Point();
+    Graphics	g;
+    Size	size = new Size(10000, 10000);;
+
+/*  Size of client area is easy to get:  */
+
+    Console.WriteLine("Client area: " + this.ClientSize);
+    Console.WriteLine();
+
+/*  See how font line spacing (a.k.a.  Font.Height) relates to the size
+    specified when the font is created.  */
+
+    FontFamily fontFamily = new FontFamily("Lucida Console");
+    point.X = 10;
+    point.Y = 10;
+
+    g = this.CreateGraphics();			// This is probably similar to
+    						//  what we used to call a
+    						//  device context
+
+    for (i=10; i<=20; i++)
+    {
+        font = new Font(fontFamily, i, FontStyle.Regular, GraphicsUnit.Pixel);
+
+        lineSpacing = fontFamily.GetLineSpacing(FontStyle.Regular);
+
+        lineSpacingPixel = font.Size * lineSpacing /
+            fontFamily.GetEmHeight(FontStyle.Regular);
+
+        Console.WriteLine("size: {0}, line spacing: {1}, font.Height: {2}, " +
+            "measured character width: {3}", i, lineSpacingPixel, font.Height,
+            TextRenderer.MeasureText(g, ".", font, size,
+            TextFormatFlags.NoPadding).Width);
+
+        TextRenderer.DrawText(g, "Hello", font, point,
+            SystemColors.ControlText);
+
+	point.Y += 20;
+    }
+
+/*  The loop above produces this output:
+
+    size: 10, line spacing: 10, font.Height: 10, measured character width: 6
+    size: 11, line spacing: 11, font.Height: 11, measured character width: 7
+    size: 12, line spacing: 12, font.Height: 12, measured character width: 7
+    size: 13, line spacing: 13, font.Height: 13, measured character width: 8
+    size: 14, line spacing: 14, font.Height: 14, measured character width: 8
+    size: 15, line spacing: 15, font.Height: 15, measured character width: 9
+    size: 16, line spacing: 16, font.Height: 16, measured character width: 10
+    size: 17, line spacing: 17, font.Height: 17, measured character width: 10
+    size: 18, line spacing: 18, font.Height: 18, measured character width: 11
+    size: 19, line spacing: 19, font.Height: 19, measured character width: 11
+    size: 20, line spacing: 20, font.Height: 20, measured character width: 12
+
+    So for some happy reason (probably because of the GraphicsUnit.Pixel
+    specification), the line spacing is the same as the requested font size and
+    also the same as the reported font height.  That makes things easy.  */
+
+}						// End button1_Click()
+
+}						// End class Form1
+}						// End namespace grafix
+</pre>
+
+    <p> Just for the record, here's a screenshot after the button was clicked:
+      Careful inspection confirms the character widths reported by the program.
+      </p>
+
+    <p> <img src="text_renderer.gif" /> </p>
+
+    <h2> Some Notes on Cursor Movement </h2>
+
+    <p> There are a number of different kinds of cursor movements that we need
+      to sort of think about in order to come up with reasonable data
+      structures for the text being edited and for the screen display.  They
+      are: </p>
+
+    <ul>
+
+      <li> Moves that result from the Find command, the Jump command, and so
+        on.  For these, the target is a specific spot in the main text buffer
+        that has to be translated into the corresponding position on the
+        screen.  </li>
+
+      <li> "Normal" moves that result from the arrow keys, PgUp, PgDn, and the
+        Home key.  For these, the target is a specific spot on the screen that
+        has to be translated into the corresponding position in the text
+        buffer.  </li>
+
+      <li> "Special" vertical moves that result from the up/down arrows, PgUp,
+        PgDn, and the Home key when the target location happens to be in the
+        no-man's land beyond the end of a line, or in the no-man's land
+        following a tab character.  For these, some special processing has to
+        occur to find the corresponding position in the text buffer.  </li>
+
+    </ul>
+
+    <p> The original Waedit manages all this in kind of an ad hoc way that
+      probably wasn't as elegant as it could have been.  Given that we're
+      starting over with a little bit of hindsight, and also that we're
+      expanding the problem somewhat to include horizontal scrolling, it
+      probably makes sense to plan this out a little bit.  Let's start with
+      pictures of some likely data structures: </p>
+
+    <p> <img src="text_buffer.gif" /> </p>
+
+    <p> As shown above, the Text Buffer is one-dimensional list of bytes that
+      appear internally exactly (except for EOL markers, as explained above in
+      the section titled Preliminary Design Notes) as they would be stored in a
+      file.  The Line Index is an auxiliary list of indexes that locate the
+      beginnings of the individual lines of text.  Current Line indexes the
+      line that contains the current character, and a second variable
+      identifies the line that's currently at the top of the visible window.
+      </p>
+
+    <p> Current Char indexes the position of the current character within the
+      text buffer.  It is always on the current line.  Finally, an array of
+      four indexes locate the four tags.  <p>
+
+    <p> <img src="screen_image_buffer.gif" /> </p>
+
+    <p> This picture shows the Screen Image Buffer, which represents the lines
+      of text that are currently being displayed.  In this buffer, the text is
+      the same as in the text buffer, except with tabs expanded into spaces and
+      with an EOF marker added if the window includes or extends beyond the
+      last line of text.  <p>
+
+    <p> Tab expansion makes the mapping between a given character's position on
+      the screen and its location within the text buffer sort of messy.  To
+      help make it easier to translate between the two, the same procedure that
+      creates the screen image buffer from the text buffer will generate for
+      each line in the screen image buffer two additional arrays.  One will
+      store the "Current Text X" value for each character on the line in the
+      screen buffer.  The other will store the "Current Screen X" value for
+      each character on the line in the text buffer.  This should eliminate much
+      of the after-the-fact calculating and farting around with PHANTOM_BLANKS
+      that the original Waedit does.  <p>
+
+    <p> Here's an example showing a line of text as it might appear in the Text
+      Buffer, the corresponding tab-expanded version that would go into the
+      Screren Image Buffer, and the two mapping arrays just described.  </p>
+
+    <p> <img src="mapping.gif" /> </p>
+
+    <p> Not sure yet exactly how we'll represent tabs and the blanks used to
+      expand them in the screen image.  Probably just with blanks ...  I don't
+      see any reason to put tab characters in the screen image, since we'd then
+      just have to handle them specially when it came time to paint the screen.
+      </p>
+
+    <p> Okay.  Now what happens in each of the three cases identified above?
+      </p>
+
+    <h4> Case 1: Find or jump to arbitrary position in the file.  Includes
+      "homestyle" horizontal moves.</h4>
+
+<pre>
+START Case 1
+  Set the current character to the new spot
+  CALL Update Display
+END
+
+START Update Display
+  Move current line to line containing the current character
+  IF Is new line in window?\No\Yes
+    IF Is new line "near" window?\Yes\No
+      Do minimum vertical scroll needed to move new line into view
+    ELSE
+      Scroll vertically to put new line at the viewrow
+    ENDIF
+    CALL Rebuild the Screen Image
+  ENDIF
+  Look up Current Screen X in screen image mapping array
+  IF Is current char visible?\No\Yes
+    IF Is new char "near" window?\Yes\No
+      Do minimum horizontal scroll needed to move new char into view
+    ELSE
+      Scroll horizontally to put new char in the middle of the window
+    ENDIF
+  ENDIF
+  CALL Paint the window
+  Adjust cursor X position
+END
+</pre>   
+
+    <h4> Case 2: Left and right arrows</h4>
+
+    <p> (Almost the same as Case 1.) </p>
+
+<pre>
+START Case 2
+  Move current character left or right by the repeat count
+  IF Did we go too far?\Yes\No
+    Fix it
+    ENDIF
+  CALL Update Display
+END
+</pre>   
+
+    <h4> Case 3: Vertical cursor movement</h4>
+
+    <p> Note that part of this is the same as part of UpdateDisplay.  That
+      means we need to bust UpdateDisplay into smaller parts, one of which can
+      be called here.  </p>
+
+<pre>
+START Case 3
+  Adjust current line
+  IF Did we go too far?\Yes\No
+    Fix it
+  ENDIF
+  IF Is new line in window?\No\Yes
+    IF Is new line "near" window?\Yes\No
+      Do minimum vertical scroll needed to move new line into view
+    ELSE
+      Scroll vertically to put new line at the viewrow
+    ENDIF
+    CALL Rebuild the Screen Image
+  ENDIF
+  Adjust current char to match new cursor position
+  CALL Paint the window
+END
+</pre>
+
+    <h2> Module Partitioning </h2>
+
+    <p> Very well.  I think we know enough now to start figuring out how to
+      partition everything into appropriate classes.  As a first step towards
+      that, let's informally list potential classes, and for each one identify
+      the data that it will contain and the methods that it will expose.  <b>
+      But note that a lot of this is redone below on August 8, 2016.  </b> </p>
+
+<pre>
+-------------------------------------------------------------------------------
+				 MACRO MANAGER
+-------------------------------------------------------------------------------
+
+PUBLIC METHODS
+
+  - A function to start capture of a macro which will either create a new macro
+    or overwrite an existing one if a macro by the same name already exists.
+    Make sure this fails when attempted while a macro is being executed.  (For
+    Macro Create)
+
+  - A function to stop macro capture, and to delete it completely if it's
+    empty.  (To exit Macro Create mode)
+
+  - A function to read a macro file, decode it, store the macros internally,
+    and execute any Set commands found in the file.  (For Macro Get)
+
+  - A function to encode a single key code as it would appear in a macro file.
+    (For Macro Insert)
+
+  - A function to return a list of the currently available macros.  (For Macro
+    List)
+
+  - A function that returns the encoded form of a specified macro.  (For Macro
+    Save)
+
+  - A function that starts the execution of a specified macro.  (For Macro
+    Execute)
+
+  - A function that returns the next character during macro execution.
+
+  - A function that returns the current macro nesting level.  The main loop
+    will use this to determine if it should get its input from the macro engine
+    or the keyboard buffer.
+
+PRIVATE METHODS
+
+  - A function that decodes an encoded macro (for use during Macro Get).
+
+PRIVATE DATA
+
+  - A list of macros.  For each one, associate the macro's name with its body.
+    Represent the body using the same codes that come from the keyboard, not
+    the encoded form stored in the macro files.
+
+  - The current macro nesting level.  This will be -1 when executing commands
+    directly from the keyboard, and a (probably small) non-negative integer
+    when executing a macro.
+
+  - A list of structures that keep track of what's going on at each macro
+    nesting level.  Each of these will include things like:
+
+    > A pointer of some sort to the macro that's being executed at this level.
+
+    > The current position within the macro (a program counter, if you will).
+
+    > The repeat count for the macro.  Either define a special value that means
+      "infinite" or else create another element in this structure for that
+      purpose.
+
+    > The state (command, insert, or exchange) to return to when the macro
+      finishes.
+
+    > The "Go" flag.  See the Aedit docs for details.
+
+-------------------------------------------------------------------------------
+                                KEYBOARD BUFFER
+-------------------------------------------------------------------------------
+ 
+NOTES
+
+  - Look for prototype code for this module above in the entry for July 27,
+    2016.
+
+PUBLIC METHODS
+
+  - A function to enqueue an incoming byte.  Normally called by the form's
+    keyboard handlers when the user hits a key.  Also called by the macro
+    manager to handle "Set" commands found when reading a macro file.
+
+  - A function to get one key from the buffer.  This one blocks if the buffer
+    is empty and remains so until more input appears.
+
+PRIVATE DATA
+
+  - A byte queue to buffer up the incoming data.
+
+  - A lock for the queue to prevent concurrent access by multiple threads.
+
+  - A wait handle for signalling the main loop when new input becomes
+    available.
+
+-------------------------------------------------------------------------------
+				   MAIN LOOP
+-------------------------------------------------------------------------------
+ 
+NOTES
+
+  - This class implements a thread that spins forever in a loop, grabbing input
+    one keystroke at a time from the keyboard or the macro engine, and
+    responding accordingly.
+
+PUBLIC METHODS
+
+  - The main loop.  This thing starts when the main form is loaded and runs in
+    its own thread forever thereafter.  It's implemented as a giant state
+    machine that mirrors the various states that the user sees as he's using
+    the editor.
+
+PRIVATE METHODS
+
+  - Tons of little routines to implement the various commands.
+
+PRIVATE DATA
+
+  - The editor state
+
+-------------------------------------------------------------------------------
+				  TEXT BUFFER
+-------------------------------------------------------------------------------
+
+NOTES
+
+  - Be especially careful to keep the the text buffer interface clean and
+    simple, because we might need to change its implementation to improve
+    performance.
+
+PUBLIC METHODS
+
+  - Return a specified line of text.
+
+  - Build (or rebuild) the line index.
+
+  - Starting at a specified spot, find the next instance of a specified string.
+
+  - Insert a specified string at a specified spot and repair the tag indexes.
+
+  - Return a specified number of bytes from a specified spot.
+
+  - Delete a specified number of bytes starting at a specified spot.
+
+  - Clear the buffer.
+
+PRIVATE DATA
+
+  - An image of the text being edited, exactly (except for EOL markers) as it
+    would appear in a file.  This will most likely be implemented as a list of
+    bytes so it can grow easily.  As noted above, EOL will be indicated by a
+    special code that represents the LFs, CRs, or CR/LF pairs that were found
+    in the original file.
+
+  - An index to the beginning of each line of text.  The first element of this
+    list will always point to the beginning of the text.  Subsequent elements
+    will point to the bytes that immediately follow subsequent end-of-line
+    markers (EOLs).
+
+  - An array of indexes to the four tag positions.  (These are here because
+    they have to be fixed up along with the line index when text insertions or
+    deletions are done.)
+
+-------------------------------------------------------------------------------
+				DISPLAY MANAGER
+-------------------------------------------------------------------------------
+
+NOTES
+
+  - Somehow this thing has to know about the selection of the block/delete
+    buffer.
+
+PUBLIC METHODS
+
+  - Update the display.
+
+  - Build (or rebuild) the screen image.
+
+  - Change font size
+
+PRIVATE DATA
+
+  - The screen image buffer--an image of the lines of text currently being
+    displayed, with tabs expanded.
+
+  - For each line in the buffer, an array that indicates how each character
+    should be rendered (i.e., whether it should be 1) normal, 2) normal with
+    alignment bar background, or 3) selected).
+
+  - For each line in the buffer, a flag indicating whether or not all the
+    characters on the line should be rendered the same.
+
+  - For each line in the buffer, a map indicating, for each character on the
+    line, that character's position within the corresponding line in the text
+    buffer.  Let's call this list of maps the "Image to Text Map".  (See the
+    picture above in the section titled "Some Notes on Cursor Movement".)
+
+  - For each corresponding line in the text buffer, a map indicating, for each
+    character on the line, that character's position within the line in the
+    screen image buffer.  Let's call this list of maps the "Text to Image Map".
+    (See the picture above in the section titled "Some Notes on Cursor
+    Movement".)
+
+  - Position of the visible window within the text.  Vertically, this means
+    which line of text appears at the top of the window.  Horizontally, it
+    means which column of the tab-expanded text appears at the left edge of the
+    window.
+
+  - Dimensions of the visible window, in both directions, in pixels.
+
+  - Horizontal dimension of the visible window, in character-widths (which
+    depends on the current font size).
+
+  - Vertical dimension of the visible window, in character-heights, (which
+    depends on the current font size).
+
+  - Font information
+
+-------------------------------------------------------------------------------
+				CURSOR MANAGER
+-------------------------------------------------------------------------------
+
+PUBLIC METHODS
+
+  - Thread (or maybe a timer event handler) to keep the cursor blinking,
+    wherever it may be.
+
+-------------------------------------------------------------------------------
+				   MAIN FORM
+-------------------------------------------------------------------------------
+
+PUBLIC METHODS
+
+  - Initialization stuff.  Validate and process command line parameters, load
+    the input file, start the Main Loop thread, start the Cursor thread, etc.
+
+-------------------------------------------------------------------------------
+				 FILE MANAGER
+-------------------------------------------------------------------------------
+
+PUBLIC METHODS
+
+  - Read input file, discover EOL encoding, translate EOLs to uniform code, add
+    EOF marker, and put result in text buffer.
+
+  - Remove EOF marker, encode EOLs in text buffer, and write result to file.
+</pre>
+
+    <h3> July 28, 2016 </h3>
+
+    <p> That's probably a good start.  Except for the parts we've already
+      worked out (keyboard input handling, macros, display, etc.) the bulk of
+      the actual editing logic should follow the original Waedit pretty
+      closely.  So let's not worry about that too much any more, and instead
+      make a little development plan: </p>
+
+    <ol>
+
+      <li> Set up a new VS2008 project for a C# Windows forms app.  Rename
+        Form1 to something more appropriate, then set up skeletons for the
+        classes identified above.  Set up for debug output to the console, then
+        check if we can pipe that output into a file.  If we can, fine.
+        Otherwise figure out some way to capture debug output to a file.  </li>
+
+      <li> Write enough of the text buffer class to 1) initialize itself with
+        some dummied-up data, 2) build the line index, and 3) return a
+        specified line of text.  </li>
+
+      <li> Write enough of the display manager to display the text.  </li>
+
+      <li> Implement the keyboard buffer.
+
+      <li> Get a cursor going, then get the arrow keys, PgUp, PgDn, and Home
+        working.  This includes scrolling around as needed to keep the cursor
+        on the screen.  </li>
+
+      <li> Get backspace and delete working.  </li>
+
+      <li> Get Q A command working </li>
+
+      <li> Get 'A' command working.  </li>
+
+      <li> Make a status bar that shows the cursor location and repeat count.
+        </li>
+
+      <li> Get repeated commands working.  </li>
+
+      <li> Get all the Set commands working.  </li>
+
+      <li> Get insert and exchange working, including all the nonsense related
+        to the Notabs setting, the Autonl setting, and the Indent setting.
+        </li>
+
+      <li> Get file reading and writing working.  </li>
+
+      <li> Get the rest of the commands except Macro and Calc working.  </li>
+        </li>
+
+<li> Fix to abort repeated comands when Ctrl-C is pressed. </li>
+
+<li> Fix to remember the screen size and position between invocations.  </li>
+
+      <li> Get macros working.  </li>
+
+      <li> Get calc working.  </li>
+
+      <li> Make cursor fatter when using larger fonts.  </li>
+
+      <li> Fix cursor misalignment when using larger fonts.  </li>
+
+      <li> Fix ugliness on the left side of the screen when using larger fonts.
+        </li>
+
+<li> Fix to display the filename in the title bar.  </li>
+
+      <li> Resolve DDDD instances.  </li>
+
+      <li> Optimize for speed as needed. </li>
+
+      <li> Relax with a root beer.  </li>
+
+    </ol>
+
+    <h3> August 4, 2016 </h3>
+
+    <p> I started down the path outlined line the last post, and got everything
+      working pretty well through Step 4.  </p>
+
+    <p> I then tried to set up a blinking cursor based on a timer, similar to
+      how it worked in the original Waedit.  This turned out to be not so easy,
+      for two reasons.  First of all, there doesn't seem to be an "XOR draw"
+      function in the .NET system, so there isn't a straightforward way to
+      repaint the background during the "cursor off" time.  To get around that,
+      I set up the timer to draw the cursor once per second, and then 500 ms
+      later to erase it by blindly repainting the entire screen.  </p>
+
+    <p> This sort of worked, but not really.  Besides being outstandlingly
+      stupid, sometimes (but not always) the first line of text would sort of
+      blink, I guess when the screen was being repainted.  I verified that it
+      wasn't taking any extra time to paint the first line (which shouldn't
+      have mattered anyway, since the screen wasn't being erased) and
+      eventually theorized that Windows was somehow (and sometimes) clearing
+      that area of the screen before the repaint.  But I'm not sure.  </p>
+
+    <p> Just to try something different, I thought about doing the blinking in
+      a separate thread rather than in a timer handler, but that would violate
+      the rule about messing with UI stuff in threads other than the one that
+      set up the UI (in this case, the main form).  </p>
+
+    <p> So I guess there are two problems.  One is figuring out how to restore
+      the background during the "cursor off" time, and the other is the
+      blinking.  Let's address the blinking first, which may be the bigger
+      problem because we're going to want to redraw the screen for lots of
+      differnt reasons, some/many/most/all of which are going to be discovered
+      in the Executor thread.  This may be a fundamental problem.  Hmm.  </p>
+
+    <h3> August 5, 2016 </h3>
+
+    <p> A midnight Googlefest last evening revealed a solution to the
+      crossthread UI access problem.  Google InvokeRequired(), Invoke(), and
+      BeginInvoke() to learn the details.  </p>
+
+    <p> So back to the blinking.  Let's set up the timer again and just
+      alternately draw white and black lines where the cursor goes.  If that
+      solves the blinking problem, then we can worry later about restoring the
+      background during the "cursor off" time, Otherwise, we need to keep
+      working on the blinking problem.  </p>
+
+    <p> Okay.  That worked to produce a blinking cursor without blinking the
+      text.  I then started to implement the main editor loop and the cursor
+      movement keys and realized I had gotten sort of class happy with the
+      original design.  Decided to start over with just three classes ...  one
+      for constants used throughout, one for the text buffer (so we can
+      reimplement it later if needed for performance), and one for everything
+      else.  I think this will just make everything easier.  </p>
+
+    <h3> August 7, 2016 </h3>
+
+    <p> Got everything working again with just the three classes identified
+      above.  Everything does seem cleaner, but the annoying blinking first
+      line problem notec on 4 Aug is back.  Here's what I've discovered so far
+      about that: </p>
+
+    <ol>
+
+      <li> The blinking only happens when attempting to call the paint routine
+        from the Executor thread.  There's no blinking when handling the form's
+        Paint event.  </li>
+
+      <li> The blinking seems to affect just the first call within
+        PaintScreen() to TextRenderer.DrawText().  Normally it handles the
+        entire first line, which is apparently why the entire first line
+        blinks.  At one point I added a dummy call to TextRenderer.DrawText()
+        of just one character before the normal ones, and just that one
+        character blinked.  </li>
+
+      <li> To avoid cross-thread-mess-with-the-UI problems, I'm using the
+        MSDN-recommended pattern to call the paint routine from the Executor
+        thread.  Here's what that looks like:
+
+<pre>
+/* ////////////////////////////////////////////////////////////////////////////
+			       UpdateDisplay()
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	The executor thread call this function after every command to
+                show the command results.
+
+REVISIONS:	 6 Aug 16 - RAC - Genesis, with help from the internet on the
+				   Invoke nonsense.  See this in particular:
+				   https://msdn.microsoft.com/en-us/library/
+				       ms171728(v=vs.110).aspx
+//////////////////////////////////////////////////////////////////////////// */
+
+delegate void UpdateDisplayCallback();
+
+void UpdateDisplay()
+{
+    if (InvokeRequired)
+    {
+	UpdateDisplayCallback d = new UpdateDisplayCallback(UpdateDisplay);
+	Invoke(d);
+    }
+    else
+    {
+// Console.WriteLine("Invoke Not Required");	// <-- Stops flickering
+// Console.Write("");				// <-- Doesn't stop flickering
+// Console.WriteLine("");			// <-- Doesn't stop flickering 
+// Console.WriteLine("a");			// <-- Stops flickering
+// System.Threading.Thread.Sleep(1);		// <-- Doesn't stop flickering 
+	PaintScreen();
+	cursorBlinkTimer.Stop();
+	PaintCursor(Color.Black);
+	cursorIsShowing = true;
+	cursorBlinkTimer.Start();
+    }
+}
+</pre>
+
+        Note the lines commented out.  At one point I happened to add the first
+        Console.WriteLine() call, and noticed that the blinking stopped.  The
+        other commented-out lines show other things that I tried, and their
+        respective results.  There must be a hint here, but I don't know what
+        to do with it yet.  </li>
+
+      <li> Tried using a single device context (Graphics object) for the
+        duration of the program, rather than multiple creations and disposals.
+        Didn't make any difference.  </li>
+
+      <li> Tried keeping the Console.WriteLine() call identified above that
+        stops the blinking, but with the project's Output Type set to Windows
+        Application instead of Console Application (so that the WriteLine()
+        call has no effect).  That didn't work.  The blinking returned as soon
+        as I changed the Output Type.  </li>
+
+    </ol>
+
+    <h3> August 8, 2016 </h3>
+
+    <p> After more fiddling around, I finally figured out (sort of) what was
+    going on.  Apparently TextRenderer.DrawText() is slow about erasing and then
+    redrawing the text if <i>something</i> hasn't happened within the last 100-200
+    msec.  Apparently that something (whatever it is)
+     happens when TextRenderer.DrawText() is called,
+    and also when  Console.WriteLine() is called.  So the effective but less than
+    satisfying fix is to call TextRenderer.DrawText() just before painting the
+    screen, with parameters such that whatever it does is more or less invisible
+    to the user.  I chose to paint a tiny white-on-white character in the far
+    southeast corner, and that seems to work.  </p>
+
+    <h2> Module Partitioning, Part II </h2>
+
+    <p> At this point I have the display stuff working well--including a
+      cursor, support for scrolling in both directions, and proper rendering of
+      colors for the alignment bars and selected text.  For whatever reason, I
+      started looking at how the original Waedit handled repeated commands and
+      the A command, and saw that it was a bit of a kludge.  </p>
+
+    <p> In trying to come up with a better scheme, I realized that there are at
+      least two categories of input that should be dealt with separately.  One
+      category includes the commands that drive the editor state machine.  The
+      other category includes input that does not directly affect the text or
+      the display.  In particular, this second category includes: </p>
+
+    <ul>
+
+      <li> The Execute Macro command (and any single-character macros that may
+        be defined) that tell the editor to run a particular macro.  </li>
+
+      <li> The A command, which tells the editor to repeat the previous "real"
+        command once (but note that the A command itself can be repeated).
+        </li>
+
+      <li> The number keys and the forward slash, which set itself up to repeat
+        the following command multiple times.  </li>
+
+    </ul>
+
+    <p> The other big thought was that instead of explicitly maintaining a set
+      of state variables for each macro nesting level, why not instantiate a
+      completely new input processor every time a macro is invoked?  That seems
+      like it would make things a lot cleaner than what I had planned.  I guess
+      it also means that the pendulum is now swinging partway back to the
+      "class happy" side, but at least this time for a better reason than "just
+      because". </p>
+
+    <h3> August 9, 2016 </h3>
+
+    <p> Pizza day!  </p>
+
+    <del>
+    <p> Without repeating the detail shown in the previous attempt to identify
+      classes, let's just briefly list those we think we'll need this time.  I
+      think there will be eight main classes: </p>
+
+    <p> <b> 1.  Main Form </b> This is the main class created by Windows that's
+      inherited from Form.  We'll use it to manage the keyboard and the display
+      and not much else.  We'll want to break this into three partial classes,
+      one for form event handlers, one for keyboard processing, and one for the
+      display.  </p>
+
+    <p> <b> 2.  Text Manager </b> Manages the main text buffer.  As noted
+      earlier, we need to keep this separate from everything else in case we
+      want to replace it later.  Includes the Line Index </p>
+
+    <p> <b> 3.  Executor </b> Implements the big state machine that takes input
+      from somewhere and actually does the editing.  We'll want to divide this
+      into a plurality of partial classes TBD.  </p>
+
+    <p> <b> 4.  Keyboard Processor </b> Inherited from Executor.  Grabs input
+      from the keyboard and uses it to drive its own copy of the big state
+      machine.  </p>
+
+    <p> <b> 5.  Macro Processor </b> Inherited from Executor.  Grabs input from
+      a supplied macro string and uses it to drive its own copy of the big
+      state machine.  </p>
+
+    <p> <b> 6.  Macro Manager </b> Stores macros and provides methods for
+      encoding and decoding them.  </p>
+
+    <p> <b> 7.  Editor State </b> Manages various aspects of the editor that
+      are common to any and all of the command processors.  These include the
+      current character, the tags, the selection endpoints, the find and
+      replace strings, the input and output filenames, parameters maintained by
+      the Set commands, etc.  </p>
+
+    <p> <b> 8.  Constants </b> A place to define keyboard codes and such that
+      are shared by several of the other classes.  </p> </del>
+
+    <p> Oops.  That plan requires a lot of rework to what I've already done.
+      It also complicates things because the command executor is suddenly
+      decoupled from the display, and that doesn't work very well because they
+      both have to know about the window size, the font size, all the scrolling
+      parameters, the cursor position, etc.  </p>
+
+    <p> Instead, I think it will work to put just the part I was calling the
+      Keyboard Processor on August 8 into its own class, and then to have it
+      call the Executor only for the commands that actually drive the state
+      machine.  Then when it's time to do macros, we can make a similar class
+      for macro processing that grabs input from a macro string and likewise
+      calls the Executor.  This is a lot less work and won't be very difficult
+      to try right now.  </p>
+
+    <h3> August 10, 2016 </h3>
+
+    <p> Partially implemented the idea just described.  It looks like it's
+      going to work.  Also planned a little bit how to handle the repeat
+      string, the Again command, and repeated commands.  Here is that work,
+      still in FCC format because it's very likely to <del>get shredded and fed
+      to the wolves more than once</del> evolve over time.  </p>
+
+    <p> <b> 17 Aug 16 Update: </b> Revised substantially as predicted.  </p>
+
+    <p> <b> 22 Aug 16 Update: </b> The diagrams above on July 21 show a check
+      for Ctrl-C in the FIFO that I don't think is included here.  I think it
+      was supposed to let Ctrl-C abort long operations and/or errant macros.
+      Check this out someday and fix if necessary.  </p>
+
+    <p> <b> 1 Sep 16 Update: </b> Revised again to reflect the actual implementation. </p>
+
+<pre>
+START Poll Keyboard
+  REPEAT
+    IF NULL && repeats remaining?\Yes\No
+      Pretend last command was entered
+    ELSE
+      CALL Get Key From Keyboard
+    ENDIF
+    CALL Handle Input Character
+    IF NULL && repeats remaining?\No\Yes
+      CALL Build Screen Image
+      CALL Update Display
+    ENDIF
+    FOREVER
+
+START Run a Macro
+  Similar to Poll Keyboard.  See old notes for details
+END
+
+START Handle Input Char
+  GOTO Handled as special?\No\Yes\Return true
+  IF In NULL state?\Yes\No
+    repeat flag = true
+    IF Any repeats remaining?\No\Yes
+      IF A?\No\Yes
+        record this as the most recent command
+        repeat flag = false
+      ELSE
+        Use the most recent commmand instead of 'A'
+      ENDIF
+      CALL Check For Repeats
+    ENDIF
+  ENDIF
+  CALL Process One Keystroke
+  IF Success?\Yes\No
+    Set up to return true
+    IF NULL state && !infinite?\Yes\No
+      Decrement repeats remaining
+    ENDIF
+  ELSE
+    Set up to return false
+    IF NULL state?\Yes\No
+      Repeats remaining = 0
+      Infinite = false
+    ENDIF
+  ENDIF
+END
+
+START Check for Repeats
+  Repeats remaining = 1
+  Infinite = false
+  IF Count apply to this command?\Yes\No
+    IF Anything in repeat string?\Yes\No
+      IF Number?\Yes\No
+        Repeats remaining = number from repeat string
+        Infinite = false
+      ELSE
+        Repeats remaining = 1
+        IF Infinite OK for this command?\Yes\No
+          Infinite = true
+        ELSE
+          Infinite = false
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+  Clear the repeat string
+END
+</pre>
+
+    <p> Got enough of that implemented that the Again command now appears to
+      work.  So the next step is to get repeated commands working, which means
+      I need a repeat string, which means I need a status bar.  It appears that
+      a status bar is just another control, which means it gobbles up part of
+      the client area, which means I can no longer use the entire client area
+      for the text.  So how do we handle that?  </p>
+
+    <p> One possiblity would be to leave things as they are and simply adjust
+      ClientSize.Height by the height of the status bar.  That sounds easy
+      enough, but maybe a bit of a kludge.  </p>
+
+    <p> Another idea would be to set up a Panel or a PictureBox or something
+      that occupies the area not used by the status bar and paint on it instead
+      of directly on the form.  This is probably a little bit more flexible,
+      especially if we decide someday to add real Windows-like scrollbars
+      and/or a vertical strip of some kind to indicate line numbers (sort of
+      like Examdiff and the Video Studio editor have).  </p>
+
+  </body>
+</html>
+
+    <h3> August 11, 2016 </h3>
+
+    <p> Yesterday's paint-to-a-panel idea turned out to be a lot easier to
+      implement than I expected, partly because it's really easy to get the
+      panel to resize itself to fill the available size whenever the form is
+      resized.  After that, about all I had to do was to paint using a Graphics
+      object for the panel rather than one for the form.  </p>
+
+    <p> So now the status bar and the repeated commands feature are all in
+      place, and the next step is to work on the Set commands so it's easy to
+      adjust the various options for testing during the subsequent development.
+      One of the new problems, then, is how to get a string from the user, as
+      needed (for example) for the Set Tabs and Set Margins commands.  </p>
+
+    <p> The original Aedit solved this problem by implementing a little line
+      editor on a status line near the bottom of the screen.  This seemed a
+      little kludgy when I built the original Waedit, and I used a number of
+      pop-up dialogs with text boxes instead.  That allowed the user to edit
+      the strings in typical Windows fashion using the keyboard and the mouse
+      however he wanted.  <p>
+
+    <p> That's all well and good until you decide you want to capture macros,
+      whereupon the whole scheme falls apart because the editor doesn't have
+      focus when those pop-up dialogs are active, and therefore has no way to
+      record whatever editing is going on, especially if the mouse is involved.
+      </p>
+
+    <p> For the new Waedit, it seems like there are two ways to solve this
+      problem: </p>
+
+    <ol>
+
+      <li> Retain the pop-up dialog idea, and then make the macro recording
+        mechanism smart enough to recognize the instances where a string is
+        being grabbed from a pop-up dialog, and then construct a macro that
+        would produce the same string that came back from the pop-up.  This
+        would have to happen for at least these situations:
+
+      <ul>
+        <li> Setting the margins </li>
+        <li> Setting the tabs </li>
+        <li> Find and replace strings </li>
+        <li> Any time a macro name was needed </li>
+        <li> Hex input </li>
+        <li> Get and Put (to specify filenames) </li>
+        <li> Calc </li>
+        <li> JL and JP (to specify line and column numbers) </li>
+      </ul>
+
+      </li>
+
+      <li> Implement a keyboard driven line editor sort of like Aedit does, but
+        fix things so it shows up in a pop-up window of some sort that won't
+        accept focus even if the user clicks on it.  This is probably a nasty
+        Windows hack, but probably doable.  </li>
+
+    </ol>
+
+    <p> Given the number and diversity of the commands that need input strings
+      from the user, I think the second approach is preferable if it's
+      possible, primarily because it keeps knowledge of the commands out of the
+      macro recording logic.  It probably makes sense to figure out how to do
+      it in a standalone prototype program.  So let's work on that.  </p>
+
+<p> Time passes ... </p>
+
+<p> Here's one way to do it: </p>
+
+<pre>
+private void Form1_KeyPress(object sender, KeyPressEventArgs e)
+{
+    if (e.KeyChar == 'a')
+    {
+        f2 = new Form2();
+        f2.Show();
+        f2.Left = 1000;
+        f2.Top = 1000;
+    }
+    else if (e.KeyChar == 'z')
+    {
+        f2.Close();
+    }
+    else
+    {
+        f2.textBox1.Text += e.KeyChar;
+    }
+}
+
+/* ///////////////////////////////////////////////////////////////////////// */
+
+protected override CreateParams CreateParams
+{
+    get
+    {
+        CreateParams rv = base.CreateParams;
+
+        rv.Style = (int)Flags.WindowStyles.WS_THICKFRAME |
+                   (int)Flags.WindowStyles.WS_CHILD;
+
+        rv.ExStyle |= (int)Flags.WindowStyles.WS_EX_NOACTIVATE |
+                      (int)Flags.WindowStyles.WS_EX_TOOLWINDOW;
+        return rv;
+    }
+}
+</pre>
+
+    <p> Here, Form1 is the main application window, as usual, and Form2 is the
+      class for the unfocusable pop-up.  Form2 contains a text box called
+      textBox1.  </p>
+
+    <p> The big trick is to override the CreateParams property and set the
+      windows styles as shown.  Grab the actual values for the WS_ symbols from
+      the internet of your choice.  The Form1_KeyPress() handler shows how to
+      create and display the pop-up when 'a' is pressed on the keyboard, close
+      it when 'z' is pressed, and add a character to the text box when any
+      other key is pressed.  Of course in a real app you'd need to be smarter
+      about positioning the pop-up on the screen.  </p>
+
+    <p> As far as I can tell, it is not necessary to specify the
+      WS_EX_NOACTIVATE style.  This could be because my example uses Show() to
+      display the window without calling Activate().  There could be other
+      circumstances where WS_EX_NOACTIVATE was necessary.  </p>
+
+    <p> This seems to solve the problem of an unfocusable pop-up.  However, it
+      does not provide a very good UI for editing strings because it appears to
+      be impossible to display a caret in the text box unless the text box has
+      focus.  So there's no convenient way for the user to see where in the
+      string he is editing.  </p>
+
+    <p> I suppose the way around this it to paint a tiny line editor on a panel
+      on the pop-up just like we're doing for Waedit itself, and to drive it
+      with keystrokes from the main form.  That's probably a lot less trouble
+      than it would appear at first.  Let's find out with another test program!
+      </p>
+
+    <h3> August 17, 2016 </h3>
+
+    <p> Lots of stuff done since the last entry, but ran into a thread
+      contention issue that deserves a little thought.  The problem is that the
+      UI thread and the executor thread both need access to the screen image.
+      I apparently saw this coming earlier, because there is a lock to prevent
+      the two threads from both trying to build the screen image at once.  But
+      that's not quite good enough, because it's still possible for one thread
+      to try to <i>use</i> the screen image while the other is changing it.  So
+      we need to rethink the situation a bit and try to fix the problem without
+      tearing things up too much.  </p>
+
+    <p> The executor thread rebuilds the screen image a handful of times, looks
+      at it a handful of times to help with scrolling and cursor positioning,
+      and uses it indirectly when it calls UpdateDisplay() (which calls
+      PaintScreen()) after executing each command.  The UI thread, on the other
+      hand, only uses the screen image when it calls PaintScreen() from the
+      editor panel's paint event handler.  </p>
+
+    <p> Given that the executor thread messes with the screen image in more
+      frequent and diverse ways than does the UI thread, we should probably
+      think of the executor thread as the owner of the screen image and say
+      that only the executor thread can change the screen image.  It (or
+      something) will have to do this once at startup (which it doesn't do
+      right now) and thereafter on the same very special occasions that it
+      observes already.  </p>
+
+    <p> We should then do whatever is necessary to 1) remove the
+      BuildScreenImage() call from PaintScreen() so that the UI thread never
+      tries to change the screen image, and 2) block the UI's paint event
+      handler whenever the screen image is under construction by the executor
+      thread.  </p>
+
+    <h3> August 18, 2016 </h3>
+
+    <p> That worked.  Here's a list of the actual changes for easy reference in
+      case there's any more trouble: </p>
+
+    <ol>
+
+      <li> Remove the BuildScreen() image call from PaintScreen.  This will
+        prevent the UI thread from changing the screen image while the executor
+        thread is trying to use it.  (There's already a lock in place to
+        prevent the opposite problem where the UI could try to paint the screen
+        while the executor thread is in the process of building the screen
+        image.) </li>
+
+      <li> Make BuildScreenImage() public so we can call it from the keyboard
+        poller, then call it from the keyboard poller, just before the call to
+        UpdateScreen().  </li>
+
+      <li> In InputProcessor.cs, initialize lastCommand to C.ESC and
+        repeatsRemaining to 1.  This will cause the keyboard poller to simulate
+        an ESC command at startup, which will in turn cause the screen image to
+        be built for the first time.  </li>
+
+      <li> In display.cs, initialize cellWidth to 8.  This matches the default
+        font height of 14 and prevents a divide by zero problem at startup.
+        </li>
+
+    </ol>
+
+    <p> <b> Well, actually that <i> didn't </i> work.  </b> The documented fix
+      did indeed resolve the contention over the screen image, but now there
+      are problems when Windows repaints the window after a resize because the
+      screen image is no longer being updated.  I'm starting to think the
+      original idea with the locks was the right approach, but just not
+      implemented correctly.  Time to regroup.  Again.  </p>
+
+    <p> <b> Nope, the first idea was better after all.  </b> All it needed was
+      a resize handler for the main form that calls BuildScreenImage().  </p>
+
+    <h3> August 19, 2016 </h3>
+
+    <p> Time to think some more about I/O to and from files and the Windows
+      clipboard.  The big thing to worry about is how to handle line
+      terminators.  </p>
+
+    <p> On input from either a file or the Windows clipboard, let's say that we
+      will figure out the file type by analyzing the first EOL discovered, and
+      default to CR/LF pairs for new files or for files with a single
+      unterminated line.  (This is how Mbedit works.) Once the EOL type is
+      determined, change all instances of EOL in the text buffer to CR so that
+      EOLs work like any other character when searching or moving the cursor.
+      </p>
+
+    <p> On output, for simplicity we'll always write CR/LF pairs.  If we find
+      we need something fancier, we can figure it out later.  </p>
+
+    <p> But first, discovered that Again and the repeated commands are supposed
+      to work while in the "select a block" state.  This, plus the fact that
+      many of the null mode commands (like Find and Jump) are also active while
+      selecting a block makes me think that the "select a block" state should
+      really be a mode of the null state and not a separate state of its own.
+      So let's hack away and see if that's really a good idea or not.  <b> 1
+      Sep 16 Update: </b> It was.  </p>
+
+    <h3> September 1, 2016 </h3>
+
+    <p> The new editor looks like the old editor now, except that: 1) it has
+      horizontal scrolling, 2) it remembers its size and screen position
+      between invocations (yay!), and 3) Jump to Match isn't working yet.  So
+      now it's time to work on the macros.  Here's a miniature plan for that:
+      </p>
+      
+    <ol>
+      <li> Implement Macro Create.  </li>
+      <li> Get Execute and single character macros to work.  </li>
+      <li> Implement Macro Save.  </li>
+      <li> Implement Macro Get and fix the app to automatically load a default
+        initialization file waedit.mac.  </li>
+      <li> Implement Macro Insert.  </li>
+      <li> Implement Macro List (maybe).  </li>
+    </ol>
+
+    <p> It looks like the .NET Dictionary class is the no-brainer way to store
+      the macros, using a string for the key that contains the macro name, and
+      a List of bytes for the value that stores the macro itself.  Assuming
+      that, Macro Create should work something like this: </p>
+
+    <ul>
+      <li> Use the line editor to get a new macro name.  (Present the most
+        recently used macro name as a suggestion.) Ctrl-C should abort the
+        command, Esc should accept the complete string from the line editor,
+        and Enter should accept just the part to the left of the cursor.  (This
+        is all standard stuff.) </li>
+      <li> When the user accepts the macro name (using Esc or Enter),
+        initialize a dictionary entry for the macro itself and set a flag that
+        causes subsequent keystrokes to be appended to the new macro until the
+        user either hits Ctrl-C or 'M'.  </li>
+      <li> If the user hits Ctrl-C, stop recording and remove the macro from
+        the dictionary.  </li>
+      <li> If the user hits 'M', stop recording and--if the macro body is
+        empty--remove the macro from the dictionary completely.  </li>
+    </ul>
+
+    <h3> September 2, 2016 </h3>
+
+    <p> That was easier than it could have been, thanks mostly to the
+      Dictionary class.  Time now for the Execute command.  Here's how that
+      will work: </p>
+
+    <ul>
+      <li> Use the line editor as usual to get a macro name.  </li>
+      <li> If the supplied name doesn't exist in the dictionary, pop up a
+        message box and just abort.  Otherwise, instantiate a macro runner
+        object and call its Run() function. </li>
+    </ul>
+
+    <p> Maybe that's it? </p>
+
+    <h3> September 3, 2016 </h3>
+
+    <p> Got the Execute command to work, as well as single-character macros.
+      Miraculously, the repeat mechanism seemed to work in both cases as well.
+      However, in looking at some of the fancy macros shown in Intel's
+      documentation, it appears that a bit of redesign may be in order, to wit:
+      </p>
+
+    <ul>
+
+      <li> Intel's trick for doing loops and conditional execution within the
+        macros uses a repeat count of zero, which doesn't work in the current
+        implementation.  There might be a way to hack this, but it might be
+        ugly.  </li>
+
+      <li> The fetching of variables doesn't fit very well into the current
+        scheme for getting input from either the keyboard or from macros.
+        </li>
+
+      <li> The current mechanism for handling repeated commands and the Again
+        command seems convoluted and fragile.  </li>
+
+      <li> There is a lot of repetition in the state machine.  </li>
+
+      <li> It's hard to see what's going on with all the bouncing around among
+        the tiny DoThis() and DoThat() functions in executor.cs.  </li>
+
+      <li> In some cases, the current mechanism for handling infinitely
+        repeated commands is downright stupid.  For example, an infinite move
+        to the right should collapse immediately into a simple jump to the end
+        of the file rather than a huge number of individual cursor moves.
+        </li>
+
+      <li> Commands like Ctrl-E (execute a single-character macro) and Ctrl-N
+        (fetch a numeric variable) where the command needs a one-character
+        parameter don't fit very well into the current state machine
+        implementation.  </li>
+
+    </ul>
+
+    <p> All this taken together makes me think that instead of a keyboard
+      poller and/or macro runner throwing input at the state machine, it might
+      be better to flip things upside down (again) and have the editor
+      request input from multiple places as needed, rather than forcing
+      it to deal with input in only one spot (ProcessOneKeystroke()).  Another
+      way to look at this is to recognize that the editor state would be
+      maintained implicitly by its position in the code rather than explicitly
+      in a state variable.  Heck, we might even use some goto statements to
+      bounce around from state to state!  </p>
+
+    <h3> September 4, 2016 </h3>
+
+    <p> So let's think a little bit about how to handle editor input, realizing
+      now that it can come one character at a time from the keyboard and from
+      macros, but also <i> many </i> characters at a time when fetched from one
+      of the calc variables.  </p>
+
+    <p> The Intel manual says that fetched string variables can be used in
+      these circumstances: </p>
+
+    <ul>
+      <li> In any line edit prompt, as when getting macro names, find or
+        replace strings, filenames, etc.  </li>
+      <li> In Insert and eXchange modes.  </li>
+      <li> Under the calc command.  </li>
+    </ul>
+
+    <p> Likewise, fetched numeric variables can be used in these circumstances:
+      </p>
+
+    <ul>
+      <li> In any line edit prompt, as when getting macro names, find and
+        replace strings, filenames, etc.  </li>
+      <li> As a count (or part of a count).  Always non-negative, and always
+        decimal.
+      <li> In Insert and eXchange modes, converted to text according to the
+        current radix setting.  </li>
+      <li> Under the calc command.  </li>
+    </ul>
+
+    <p> Based on this information, it looks like a handful of generic input
+    routines would be useful, like so: </p>
+
+    <ul>
+
+      <li> A function that returns either a single character in the normal case
+        where a guy is just typing, or else the (possibly multiple character)
+        contents of one of the variables if the guy hits Ctrl-V or Ctrl-N.
+        </li>
+
+      <li> A variation on the above for use when expecting a count that rejects
+        Ctrl-V and always returns the absolute value of Ctrl-N results in
+        decimal format.  </li>
+
+      <li> A function that returns a single character from either the keyboard
+        or a macro (depending on whether or not macro execution was under way).
+        This would be used by the other two functions to get individual input
+        bytes, and also in cases like Ctrl-E (and Ctrl-N and Ctrl-V for that
+        matter) that need to grab just one character for one reason or another.
+        </li>
+
+    </ul>
+
+    <p> To start, the first two of these can be skeletons that just call the
+      third.  However, it'll be important to call them from the appropriate
+      spots to avoid rework later and to make sure we don't need anything more
+      or different.  </p>
+
+    <p> The next thing to worry about is the rework of the Keyboard Poller and
+      the Macro Runner into something that will work with the new "upside down"
+      way of handling input.  Previously, the Keyboard Poller and Macro Runner
+      spun in loops, grabbing input from wherever, and calling the state
+      machine with each keystroke.  </p>
+
+    <del>
+    <p> In the new scheme, we want the state machine to request input when it
+      needs it, so we need some sort of "input server" mechanism that
+      understands about the keyboard, about macros, and about how macros nest
+      and terminate--both normally and abnormally.  </p>
+
+    <p> Imagine that we have a generic "input server" class, with two inherited
+      variations--one for serving input from the keyboard and one for serving
+      input from macros.  Further imagine that the base class maintains stuff
+      like the repeat count, 'infinite' flag, etc.  for whatever macro nesting
+      level we're at, sort of like the current InputProcessor class does now.
+      Finally, imagine that we have a stack of input servers and that we always
+      work from the one at the top of the stack.  Invoking a macro would then
+      mean just pushing a new macro server onto the stack, and returning from a
+      macro would mean just popping the macro server from the stack.  That
+      might be pretty neat.  </p>
+
+    <p> Here's some stuff to get started: </p>
+
+<pre>
+START Main Loop
+  REPEAT
+    CALL Get Count and Command
+    IF Digit(s) or slash?\No\Yes
+      IF Valid command?\Yes\No
+        CALL Execute Command
+      ENDIF
+      Clear count string
+    ELSE
+      IF Which?\Digits\Slash
+        IF Slash already typed?\No\Yes
+          Append digit(s) to count string
+        ENDIF
+      ELSE
+        IF Anything in count string?\No\Yes
+          Put slash in count string
+        ENDIF
+      ENDIF
+    ENDIF
+  FOREVER
+
+START Get Count and Command
+  CALL Get Input Byte
+  IF Ctrl-N\No\Yes
+    Return the keystroke
+  ELSE
+    CALL Get Input Byte
+    IF 0-9?\Yes\No
+      Return the decimal representation of the absolute value of the numeric variable
+    ENDIF   
+  ENDIF
+END
+</pre>
+</del>
+
+    <h3> September 5, 2016 </h3>
+
+    <p> The new scheme can work in much the same way, except that the keyboard
+      poller (a.k.a.  "the main loop") and the macro runner will only be
+      worried about getting repeat counts and command bytes.  The command
+      executors will grab any extra information (like macro names, find and
+      replace strings, filenames, etc.) as they need it.  </p>
+        
+    <p> One more time, here's some stuff to get started: </p>
+        
+<del><pre>
+START Main Loop
+  CALL Run (from keyboard)
+END
+
+START Run
+  REPEAT
+    CALL Get Count and Command
+    GOTO Null result?\No\Yes\Done
+    IF Digit(s) or slash?\No\Yes
+      CALL Manage Repeats
+      Clear count string
+    ELSE
+      IF Which?\Digits\Slash
+        IF Slash already typed?\No\Yes
+          Append digit(s) to count string
+        ENDIF
+      ELSE
+        IF Anything in count string?\No\Yes
+          Put slash in count string
+        ENDIF
+      ENDIF
+    ENDIF
+  FOREVER
+
+START Manage Repeats
+  IF Repeats apply to this command?\Yes\No
+    Parse repeat count from count string
+  ELSE
+    Set count to 1
+  ENDIF
+  WHILE For each repeat\More\Done
+    IF Is this the 'A' command?\No\Yes
+      Remember it as the 'last command'
+      Set 'repeating' if we're doing the second or subsequent iteration
+      CALL Execute herb
+    ELSE
+      Set 'repeating'
+      CALL Execute last command
+    ENDIF
+    GOTO Success?\Yes\No\Break
+  ENDWHILE
+END
+
+START Get Count and Command
+  IF From keyboard?\Yes\No
+    Get byte from keyboard
+  ELSE
+    GOTO At end of macro?\No\Yes\Return NULL string
+    Get byte from macro
+  ENDIF
+  CALL Get Input Byte
+  IF Ctrl-N\No\Yes
+    Return the keystroke
+  ELSE
+    CALL Get Input Byte
+    IF 0-9?\Yes\No
+      Return the decimal representation of the absolute value of the numeric variable
+    ENDIF   
+  ENDIF
+END
+</pre></del>
+
+    <h3> September 6, 2016 </h3>
+
+    <p> After the dust settled, the input mechanism wound up looking pretty
+      much like the pseudocode above.  However we did need to implement the
+      FIFO stack of input servers to let the executor routines grab
+      miscellaneous input from the right place.  Thanks to the .NET collections
+      class, that turned out to be pretty easy.  Here's an update to the
+      pseudocode from yesterday.  This should be pretty close to the actual
+      implementation.  </p>
+
+<pre>
+START Run()
+  Push the macro runner
+  REPEAT
+    IF Command State\Yes\No
+      CALL Do Command State
+    ELSE
+      CALL Do Insert and Xchange
+    ENDIF
+    FOREVER
+
+START Do Command State
+  CALL Get Number or Keystroke
+  GOTO Null?\No\Yes\POP
+  IF Backspace in count?\No\Yes
+    IF /\No\Yes
+      IF Digit?\No\Yes
+        CALL Manage Repeats (herb)
+        ??? Somehow deal with failures here ???
+        Clear the count string
+      ELSE
+        IF count == /?\Yes\No
+          Clear count string
+        ENDIF
+        Add digit to count string
+        Trim count string to 6 characters
+      ENDIF
+    ELSE
+      Count string = /
+    ENDIF
+  ELSE
+    Remove last count character
+  ENDIF
+END
+
+START Do Insert and Xchange
+  CALL Get Number or String or Keystroke
+  WHILE For each byte returned\More\Done
+    CALL Execute
+    ??? Somehow deal with failures here ???
+  ENDWHILE 
+END
+
+START POP
+  Pop the macro runner
+END
+
+START Get Count or Command
+  Get input byte
+  IF Ctrl-N?\No\Yes
+    Return the byte
+  ELSE
+    Return the variable expansion
+  ENDIF
+END
+
+START Manage Repeats
+  IF Repeats apply to this command?\Yes\No
+    Parse repeat count from count string
+  ELSE
+    Assume repeat count of 1
+  ENDIF
+  WHILE For each iteration\More\Done
+    IF Ctrl-C waiting?\Yes\No
+      Overwrite herb with Ctrl-C from keyboard
+    ENDIF
+    IF herb == 'A'?\Yes\No
+      repeating = true
+    ELSE
+      last command = herb
+      repeating = true for second and subsequent iterations
+    ENDIF
+    set mainForm infinite flag
+    GOTO Execute() okay?\Yes\No\BREAK   
+  ENDWHILE
+END
+</pre>
+
+    <p> Now time to rework the line editor so it grabs data on its own rather
+      than being force fed by some external agent.  Here's a plan for that:
+      </p>
+
+    <ul>
+
+      <li> Leave the LineEditor and LineEditorForm classes alone.  They look
+        okay as is.  </li>
+
+      <li> Fix RequestUserString() and RUS() to return a string value.  </li>
+
+      <li> Add another parameter to RequestUserString() and RUS() that tells
+        whether &lt;CR&gt; should terminate the input or be entered as any
+        other character.  </li>
+
+      <li> In RUS(), after the call to lef.Show(), enter a loop that grabs
+        input one byte at a time from the input source.  </li>
+        
+      <li> If the user hits Esc, grab the entire input string, close the line
+        editor, and return the result.  </li>
+ 
+      <li> If the user hits &lt;CR&gt;, AND the "terminate on &lt;CR&gt;"
+        option is true, grab the trimmed input string, close the line editor,
+        and return the result.  </li>
+
+      <li> Feed all other characters to the line editor.  </li>
+
+    </ul>
+
+    <h3> September 9, 2016 </h3>
+
+    <p> For safekeeping, here's how to set up some canned macros for testing
+      and also a function for dumping all the currently-defined macros: </p>
+
+<pre>
+List<byte> stlb(string s) { return new List<byte> (Encoding.ASCII.GetBytes(s)); }
+
+public MainForm()
+{
+    InitializeComponent();
+
+    macros.Add("i", stlb("i>iiii<\x1b"));
+    macros.Add("m", stlb("3ei\x1bi\xd\xd\x1b"));
+    macros.Add("\x17", stlb("3ei\x1bi\xd\xd\x1b"));
+    DumpMacros();
+
+void DumpMacros() { foreach(KeyValuePair<string, List<byte>> kvp in macros) {
+Console.WriteLine(kvp.Key); foreach(byte b in kvp.Value) {
+Console.Write(b); Console.Write(" "); } Console.WriteLine(); Console.WriteLine(); } }
+</pre>
+
+    <h3> September 10, 2016 </h3>
+
+    <p> At this point it looks like macro recording and execution are working,
+      at least for the simple macros that I have tried so far.  So now let's
+      finish the other macro-related commands so it will be easier to save
+      create and use macro files.  Macro Save seems like the first place to
+      start, so that we can create macro files more or less automatically.
+      Here's how it might work: </p>
+
+<pre>
+START Macro Save
+  Get macro name (ala DoNullE())
+  GOTO Is it null?\No\Yes\Done
+  GOTO Does macro exist?\Yes\No\Done
+  Insert 'M' into text buffer
+  WHILE For each name character\More\Done
+    CALL Add Char (false)
+  ENDWHILE
+  Insert \BR into text buffer
+  WHILE For each macro character\More\Done
+    CALL Add Char (true)
+  ENDWHILE
+  Insert "\MM;" into text buffer
+END
+
+START Add Char (body)
+  IF Is char printable?\No\Yes
+    IF Name defined && body?\No\Yes
+      Insert hex code into text buffer
+    ELSE
+      Insert defined name into text buffer
+    ENDIF
+  ELSE
+    Insert character into text buffer
+  ENDIF
+END
+</pre>
+
+    <p> The Macro List command followed eaily enough from that, so now we need
+      to worry about Macro Get, which reads and "executes" macro files.  Once
+      that's in place, we need to set things up to load a "waedit.mac" file at
+      startup, and automatically run an 'init' macro if found when loading any
+      macro file, either at startup or via the Macro Get command.  </p>
+
+    <p> The tricky part of all this will be parsing the macro file with all of
+      its weird escape codes and whatnot.  Here's how that might work: </p>
+
+    <p> <img src="parse_macro_file.gif" /> </p>
+
+    <p> Well, that's all fine, but what about all the escape codes and such?
+      We'll handle that at a lower level, in some sort of "get next something"
+      function, like so: </p>
+
+<pre>
+START Get Macro Character
+  CC means "current character"
+  BS means "backslash"
+  Assume an EOF marker of some sort to make things easy
+  GOTO At EOF?\No\Yes\Return EOF
+  IF In comment?\No\Yes
+    IF CC == BS?\Yes\No
+      IF Next == 0?\No\Yes
+        IF Next == BS?\No\Yes
+          IF Next == *?\No\Yes
+            GOTO Next 2 a valid code?\Yes\No\Error
+            IF In body?\No\Yes
+              GOTO Code  = BR?\Yes\No\Error
+              rv = decoded code
+              i += 3
+            ENDIF
+          ELSE
+            rv = BS *
+            i += 2
+          ENDIF
+        ELSE
+          rv = BS
+          i += 2
+        ENDIF
+      ELSE
+        GOTO Next + 1 == hex digit?\Yes\No\Error
+        IF Next + 2 == hex  digit?\Yes\No
+          rv = 2-digit decode
+          i += 4
+        ELSE
+          rv = 1-digit decode
+          i += 3
+        ENDIF
+      ENDIF
+    ELSE
+      rv = CC
+      i++
+    ENDIF
+  ELSE
+    IF CC == * && Next == BS?\Yes\No
+      rv = *\
+      i += 2
+    ELSE
+      rv = CC
+      i++
+    ENDIF
+  ENDIF
+END
+</pre>
+
+    <p> Or not.  That's too complicated for words.  Let's try to implement the
+      parser itself using a goto-based state machine where each state grabs its
+      own input.  That way we can at least keep the comment-parsing logic
+      separate from everything else.  More like this:  </p>
+
+<pre>
+START Parse Macro File
+  Read file into a string variable 's'
+  Add a few EOFs for simplicity
+  Set index 'i' to 0
+END LOOKING FOR MACRO
+
+START LOOKING FOR MACRO
+  REPEAT
+    IF s[i] == EOF\No\Yes
+      IF s[i] == 'M'\No\Yes
+        IF s[i] == BS && s[i+1] == *\No\Yes
+          i++
+        ELSE
+          Next = SKIPPING COMMENT
+          i += 2
+          Break
+        ENDIF
+      ELSE
+        Inz name string
+        i++
+        Next = GETTING NAME
+        Break
+      ENDIF
+    ELSE
+      Next = DONE
+      Break
+    ENDIF
+  UNTIL Break\Yes\No
+END Goto Next
+
+START SKIPPING COMMENT
+  REPEAT
+    IF s[i] == EOF\No\Yes
+      IF s[i] == * && s[i+1] == BS\No\Yes
+        i++
+      ELSE
+        Next = LOOKING FOR MACRO
+        i += 2
+        Break
+      ENDIF
+    ELSE
+      Show error message
+      Next = DONE
+      Break
+    ENDIF   
+  UNTIL Break\Yes\No
+END Goto Next
+
+START GETTING NAME
+  REPEAT
+    CALL Get Next Byte
+    IF EOF or bad code?\No\Yes
+      IF BR\No\Yes
+        IF Printable?\Yes\No
+          Add to name
+        ELSE
+          Show error message
+          Next = DONE
+          Break
+        ENDIF
+      ELSE
+        Inz body list
+        Next = GETTING MACRO
+        Break
+      ENDIF
+    ELSE
+      Show error message
+      Next = DONE
+      Break
+    ENDIF
+  UNTIL Break\Yes\No
+END Goto Next
+
+START GETTING MACRO
+  REPEAT
+    CALL Get Next Byte
+    IF EOF or bad code?\No\Yes
+      IF MM\No\Yes
+        Add to body       
+      ELSE
+        Save macro just parsed
+        Next = LOOKING FOR MACRO
+        BREAK
+      ENDIF
+    ELSE
+      Show error message
+      Next = DONE
+      Break
+    ENDIF
+  UNTIL Break
+END Goto Next
+
+START Get Next Byte
+  IF s[i] == EOF\No\Yes
+    IF s[i] == BS\Yes\No
+      IF s[i+1] == BS\No\Yes
+        IF s[i+1] == 0\No\Yes
+          IF s[i+1] and s[i+2] a code?\Yes\No
+            rv = decoded code
+            i += 3
+          ELSE
+            rv = ERROR
+          ENDIF
+        ELSE
+          IF s[i+2] == hex digit?\Yes\No
+            IF s[i+3] == hex  digit?\Yes\No
+              rv = 2-digit decode
+              i += 4
+            ELSE
+              rv = 1-digit decode
+              i += 3
+            ENDIF
+          ELSE
+            rv = ERROR
+          ENDIF
+        ENDIF
+      ELSE
+        rv = BS
+        i += 2
+      ENDIF
+    ELSE
+      rv = s[i]
+      i++
+    ENDIF
+  ELSE
+    rv = EOF
+  ENDIF
+END Return rv
+</pre>
+
+    <h3> September 12, 2016 </h3>
+    
+    <p> All the macro-related stuff seems to be working now, so I guess it's
+      time to start figuring out how the Aedit variables and the calc command
+      are supposed to work.  It will be interesting to see how much rework it
+      takes to get all that going.  To start, here's a list of the variables,
+      lifted directly from the Intel Aedit manual.  If nothing else, these
+      should help us figure out how we should be handling various filenames and
+      macro names. </p>
+    
+<pre>
+n0-9	numeric	global	Read-write n variables, assigned only in the calc
+			command.
+
+s0-9	string	global	Read-write s variables, assigned only in the calc
+			command.
+
+sb	string	global	Up to 60 characters of the block buffer.
+
+se	string	global	The name of the current edited file.
+
+sg	string	global	The name of the last file specified in the get command.
+
+si	string	global	The name of the main input file.
+
+sm	string	global	The name of the last file specified for the macro get
+			command.
+
+so	string	global	The name of the OTHER input file.
+
+sp	string	global	The name of the last file specified for the block put
+			command.
+
+sr	string	global	The replacement string of (?)replace.
+
+st	string	global	The target string of (-)find and (?)replace.
+
+sw	string	global	The name of the last file specified for the quit write
+			command.
+
+bof	Boolean	local	True if the cursor is at the beginning of the file.
+
+eof	Boolean	local	True if the cursor is at the end of file.
+
+inothr	Boolean	local	True if you are in the OTHER buffer.
+
+isdel	Boolean	local	True if the character at the current position is in the
+			user-defined delimiter set.
+
+iswhite	Boolean	local	True if the character at the current position is
+			whitespace (space, tab, LF or CR).
+
+lstfnd	Boolean	local	True if the last find or replace string was found.
+
+cntexe	numeric	local	The number of times the macro that is currently
+			executing has executed in the current activation.
+                        The first execution is number one.  If none, the value
+                        is zero.
+
+cntfnd	numeric	local	Relates to (-)find.
+
+cntmac	numeric	local	The number of times that the last macro (which has
+			finished executing) was executed.
+
+cntrep	numeric	local	Relates to (?)replace.
+
+col	numeric	local	The current logical cursor position in the line.  (This
+			value is not affected by the setting of leftcol.)
+
+curch	numeric	local	ASCII value of the current character.
+
+curpos	numeric	local	The offset of current location in file.
+
+curwd	numeric	local	ASCII value of the two bytes at the current cursor
+			location.
+
+date	numeric	local	Date in decimal format MMDDYY.
+
+imargn	numeric	local	The value of the current indent margin setting.
+
+ldwch	numeric	local	If the current character is an uppercase character
+			(41H to 5AH), ldwch is the ASCII value of the lowercase
+                        character.  Otherwise ldwch is the same as curch.
+
+lmargn	numeric	local	The value of the current left margin setting.
+
+nstlvl	numeric	local	The nesting level of the currently executing macro;
+			main command level is level zero.
+
+nxtch	numeric	local	ASCII value of the next character.
+
+nxttab	numeric	local	The column number of the next tab position (to the
+			right of the cursor) as defined by set tab.
+
+nxtwd	numeric	local	ASCII value of the second and third bytes following the
+			current cursor location.
+
+rmargn	numeric	local	The value of the current right margin setting.
+
+row	numeric	local	The current cursor row (the actual row, not the
+			logical line in the text).
+
+slx	numeric	local	The length of the global s variable slx, where x is
+			0-9; or the second letter of a read-only string
+                        variable.
+
+tagA	numeric	local	The offset of tag A.
+
+tagB	numeric	local	The offset of tag B.
+
+tagC	numeric	local	The offset of tag C.
+
+tagD	numeric	local	The offset of tag D.
+
+time	numeric	local	Time in decimal format HHMMSS.
+
+upch	numeric	local	If the current character is a lowercase character
+			(61H to 7AH), upch is the ASCII value of the uppercase
+                        character.  Otherwise, upch is the same as curch.
+</pre>
+
+    <h3> September 13, 2016 </h3>
+ 
+    <p> A little bit of study indicates that a recursive descent parser is the
+      appropriate way to implement the calc command.  As it turns out, that's
+      also how it's done in the Aedit source code.  The hard part there is
+      coming up with the grammar, but--fortunately--comments in the Aedit
+      source code explicitly give the grammer!  Here it is, reformatted just a
+      bit for easy reading: </p>
+
+<pre>
+Usage: calc_statement := n_statement
+                      |  s_statement
+
+Usage: s_statement    := Si = s_statement
+                      |  S(n_statement) = s_statement
+                      |  S(n_statement) = '&lt;string&gt;[']
+                      |  S(n_statement)
+
+Usage: n_statement    := Ni = n_statement
+                      |  N(n_statement) = n_statement
+                      |  logicalops
+
+Usage: logicalops     := logicalops '|' relops
+                      |  logcialops & relops
+                      |  logicalops ^ relops
+                      |  relops
+
+Usage: relops         := relops == srops
+                      |  relops <> srops
+                      |  relops <= srops
+                      |  relops >= srops
+                      |  relops < srops
+                      |  relops > srops
+                      |  srops
+
+Usage: srops          := srops $CLS$ exp
+                      |  srops $CRS$ exp
+                      |  srops $LLS$ exp
+                      |  srops $LRS$ exp
+                      |  srops $ALS$ exp
+                      |  srops $ARS$ exp
+                      |  exp
+
+Usage: exp            := exp + term
+                      |  exp - term
+                      |  term
+
+Usage: term           := term * factor
+                      |  term / factor
+                      |  term \ factor
+                      |  factor
+
+Usage: factor         := factor ** primary
+                      |  primary
+
+Usage: primary        := +primary
+                      |  -primary
+                      |  (unimp)--primary
+                      |  (unimp)++primary
+                      |  ~primary
+                      |  !primary
+                      |  #primary
+                      |  element
+
+Usage: element        := Ni
+                      |  N(n_statement)
+                      |  (n_statement)
+                      |  numeric_constant
+                      |  calc_variable
+</pre>
+
+    <p> This looks clear enough, except for the (unimp) notation within the
+      "primary" definition.  It appears from looking at the code that it just
+      means "unimplemented".  </p>
+      
+    <p> The other hard part is the lexical analyzer (or scanner, as it's
+      sometimes called).  But once again, this is all figured out in the Aedit
+      code, so I suppose it makes sense to use the Aedit implementation as a
+      model for the C# version.  Before diving into that, however, I think it
+      would be a good idea to prototype this whole thing by implementing a
+      simple grammar that does, say, four function integer arithmentic with
+      parentheses to override the normal precedence rules.  If we can get that
+      to work, then we should be able to expand it to handle the grammar
+      defined for Aedit above.  </p>
+
+    <h3> September 14, 2016 </h3>
+
+    <p> After implementing the prototype program and studying the Aedit source
+      code a little bit more, I think we can eliminate some of the kludginess
+      by not allowing weird nested assignments.  In other words, statements
+      like "N1 = N2 = 55" and "3 + 5 + (N3 = 9)" would be illegal.  Here's a
+      revised grammar that (I think) reflects that simplification: </p>
+
+<pre>
+calc_statement := s_assignment   always starts with Sn or S(
+               |  s_expression   always starts with Si or S( or quoted string
+               |  n_assignment   always starts with Nn or N(
+               |  n_expression   can start with lots of different things
+
+s_assignment   := Sn = s_expression
+               |  S(n_expression) = s_expression
+
+s_expression   := S(n_expression)
+               |  quoted_string
+               |  string_variable (which all have names of the form 'Si')
+
+n_assignment   := Nn = n_expression
+               |  N(n_expression) = n_expression
+
+n_expression   := logicalops | relops
+               |  logcialops & relops
+               |  logicalops ^ relops
+               |  relops
+
+Usage: relops  := relops == srops
+               |  relops <> srops
+               |  relops <= srops
+               |  relops >= srops
+               |  relops < srops
+               |  relops > srops
+               |  srops
+
+Usage: srops   := srops $CLS$ exp
+               |  srops $CRS$ exp
+               |  srops $LLS$ exp
+               |  srops $LRS$ exp
+               |  srops $ALS$ exp
+               |  srops $ARS$ exp
+               |  exp
+
+Usage: exp     := exp + term
+               |  exp - term
+               |  term
+
+Usage: term    := term * factor
+               |  term / factor
+               |  term \ factor
+               |  factor
+
+Usage: factor  := factor ** primary
+               |  primary
+
+Usage: primary := +primary
+               |  -primary
+               |  ~primary
+               |  !primary
+               |  #primary
+               |  element
+
+Usage: element := Ni
+               |  N(n_expression)
+               |  (n_expression)
+               |  numeric_constant
+               |  named_calc_variable
+</pre>
+
+    <p> I also think we can do a little better than the Aedit source code by
+      carefully identifying the possible tokens.  It seems  to me like the
+      Aedit parser is doing some lexical analysis that really should be
+      handled in the token scanner.  To that end, here are the tokens that I
+      think we need to recognize:  </p>
+<pre>
+-------------------------------------------------------------------------------
+Name:         SVAR
+Description:  Any of the string variables
+N Value:      The character after the S, which can be 0-9 or a letter
+              corresponding to one of the global string variables
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         S_IND
+Description:  "S(", indicating the beginning of an indirect string variable
+              reference
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         STRING
+Description:  A quoted string, delimited by either ' or " characters
+N Value:      --
+S Value:      The string enclosed by the delimiters
+-------------------------------------------------------------------------------
+Name:         NVAR
+Description:  Any of the numeric variables N0-9
+N Value:      The character after the N, which can be 0-9.
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         N_IND
+Description:  "N(", indicating the beginning of an indirect numeric variable
+              reference
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         ASSIGN
+Description:  The equals sign
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         LOGICAL_OP    
+Description:  A logical operator
+N Value:      AND, OR, or XOR to indicate the specific logical operator
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         RELATIONAL_OP
+Description:  A relational operator
+N Value:      EQ, NE, LT, GT, LE, or GE to indicate the specific relational
+              operator
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         SHIFT_OP      
+Description:  A shift operator
+N Value:      CLS, CRS, LLS, LRS, ALS, or ARS to indicate the specific shift
+              operator
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         PLUS
+Description:  The plus sign
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         MINUS
+Description:  The minus sign
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         TIMES
+Description:  The asterisk
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         DIVIDE
+Description:  The forward slash
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         MOD
+Description:  The backslash
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         EXP
+Description:  The double asterisk
+N Value:      --            
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         ONES_COMP
+Description:  The tilde
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         POS
+Description:  The exclamation point
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         NEG
+Description:  The pound sign
+N Value:      --
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         NUMBER        
+Description:  A numeric constant          
+N Value:      The constant's value, as an integer
+S Value:      --
+-------------------------------------------------------------------------------
+Name:         NAMED_VAR
+Description:  One of the named numeric variables
+N Value:      The variable's value, as an integer
+S Value:      --
+-------------------------------------------------------------------------------
+</pre>
+
+    <h3> September 18, 2016 </h3>
+
+    <p> Got the calculator and the macros working well enough to work with a
+      modified version of the CNTR macro from useful.mac, which centers a line
+      of text.  Once everything was coded and compiling cleanly, I had to make
+      these tweaks to get it all to work: </p>
+
+    <ul>
+
+      <li> Page 88 of the Aedit manual contains this note: "When a command in a
+        macro is marked as failed, macro execution is terminated, and control
+        is returned to the caller." It seems that this has to be "When a
+        command in a macro <b> <i> that is not itself a call to another macro
+        </i> </b> is marked as failed, macro execution is terminated, and
+        control is returned to the caller." </li>
+
+      <li> The trick in the Aedit manual for implementing conditional branching
+        in macros using the Find command did not work with my implementation of
+        repeating commands.  I got around this by creating a new K command (for
+        kill) that does nothing but mark itself as having failed.  It works in
+        place of Find for the conditional branching trick.  </li>
+
+      <li> I fixed DoNullEnter() to fail when attempted at the end of the file.
+        This was just an earlier omission. </li>
+
+      <li> I changed the \NL at the end of the CNTR macro to \CD so that it
+        would abort properly at the end of the file.  Note that the CNTR macro
+        still needs work because it should be skipping over tabs and blanks
+        (instead of just blanks) when trying to measure the width of the
+        original text.  </li>
+
+    </ul>
+
+    <p> At this point I don't think Ctrl-C works reliably with nested macros.
+      That's probably the next thing to address.  </p>
+ 
+    <p> Fixed Ctrl-C to set 'abortAllMacros' abort any and all macros as if the
+      nesting level had been exceeded.  Somehow this seems like a hack, but it
+      does work.  </p>
+ 
+    <h3> September 21, 2016 </h3>
+
+    <p> Wasted a day replacing the List<byte> text buffer with a fancy gap
+      buffer.  Eventually got it to work, only to find that it was slower than
+      the original.  Not sure why.  </p>
+
+    <h3> September 26, 2016 </h3>
+
+    <p> After getting (almost?) all the loose ends tied off, tried my hand at
+      writing some more complicated macros.  Almost immediately ran into a
+      problem.  If a macro tries to run the "e" command with a repeat count of
+      zero, there's nothing to skip over the macro name in the input stream and
+      the macro runner then interprets the characters in the macro name as
+      commands.  Not good!  So this needs to be fixed.  </p>
+
+    <p> I also think it might be a good idea to give each macro executiong
+      level its own copy of the N and S variables.  <b> Nope.  If we did this
+      there wouldn't be an easy way to pass information to and from the macros.
+      </b> </p>
+
+    <p> Need to fix the first problem first, however.  As it is now, repeats
+      are handled in the Command Runner without any worry about which commands
+      are being executed.  I think the solution is probably to have the
+      commands themselves handle the repeats.  This implies a bit of rework,
+      but I think it is a good idea in the long run.  </p>
+
+    <h3> October 2, 2016 </h3>
+
+    <p> Fixed so the commands handle their own repeats as planned.  That fixed
+      the problem encountered earlier, and also made it easy to fix some Day
+      One performance problems that had been bugging me.  </p>
+
+    <p> Stressed (?) the macro logic with some macros that simulate grade
+      school pencil-and-paper infinite precision decimal addition and
+      multiplication.  For the record, here they are: </p>
+
+<pre>
+\* ////////////////////////////////////////////////////////////////////////////
+                                    ipa.mac
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	Here lie some just-for-fun Waedit macros that do infinite-
+		precision integer arithmetic.
+
+REVISIONS:	 1 Oct 16 - RAC - Initial add routine based on a previous
+				   version
+//////////////////////////////////////////////////////////////////////////// *\
+
+\* ////////////////////////////////////////////////////////////////////////////
+                                      Add
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	This set of macros will add up a column of numbers of arbitrary
+		size.  The problem must be set up initially according to these
+                rules:
+                
+                1.  The numbers must be lined up as if you were going to add
+                    them by hand.
+                
+                2.  The numbers must be the first thing in the file, or they
+                    must be preceded by a row of hyphens.
+                
+                3.  The numbers must be followed by a row of hyphens similar to
+                    the line you would draw below the numbers if you were going
+                    to add them by hand.  In particular, the rightmost hyphen
+                    in the row must line up with the ones' place digits.
+                    
+                4.  The file must not contain any hyphens beyond those
+                    specified in the previuos rule.
+                    
+                5.  The numbers must be positioned horizontally to leave enough
+                    room for the leftmost digits of the answer.
+
+METHOD:		START Add
+		  Look for the file's last hyphen
+		  GOTO Success?\Yes\No\Abort
+		  Insert a carriage return
+		  Duplicate the hyphen row and change to all blanks
+		  Find the last hyphen (again)
+		  Clear the carry
+		  REPEAT
+		    CALL Process One Column
+		  UNTIL Column empty & carry 0\Yes\No
+		  Display any remaining carry digits
+		END
+		
+		START Process One Column
+		  Move left to next column
+		  Tag this position
+		  Nothing found so far (n1 = true)
+		  Column sum = carry (n2 = n0)
+		  REPEAT
+		    Move up one row
+		    IF On a digit?\Yes\No
+		      Add it to the column sum
+		      Note digit found (n1 = false)
+		    ENDIF
+		  UNTIL At hyphen or row 0?\Yes\No
+		  Return to tagged position
+		  Move down one
+		  Insert ones place from column sum
+		  Carry = column sum mod 10
+		  Return to tagged position
+		END
+		
+VARIABLE USE:	n0:  Column carry
+		n1:  Flag:  True if column contains no digits, false otherwise
+                n2:  Column sum
+		n9:  Scratch register
+
+REVISIONS:	 1 Oct 16 - RAC - Genesis, based on a previous version
+//////////////////////////////////////////////////////////////////////////// *\
+
+MADD\BRjs/f-\BR
+i\NL\BR
+-\NL\BR\CL\CHb\CDbg\NL/r-\BR \BR
+js/f-\BRcn0=0\BR
+/eADD1\BR/f-\BR\CD\MM
+
+MADD1\BR
+eADD2\BR
+\XN1K
+\MM
+
+MADD2\BR
+\CL
+ta
+cn1=-1\BR
+cn2=n0\BR
+/eADD3\BR
+cn9=n1&(n2==0)\BR
+\XN9K
+ja
+\CD
+cn9=n2%10\BR
+sdy
+x\XN9\BR
+sdn
+cn0=n2/10\BR
+ja
+cn1=n1&(n0==0)\BR
+\MM
+
+MADD3\BR
+\CU
+eADD4\BR
+cn9=((line==0)|(curch==2Dh))\BR
+\XN9K
+\MM
+
+MADD4\BR
+cn9=((curch<30h)|(curch>39h))\BR
+\XN9K
+cn2=n2+curch-30h\BR
+cn1=0\BR
+\MM
+
+\* ////////////////////////////////////////////////////////////////////////////
+                                     Mult
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	This set of macros will multiply two arbitrarily long numbers.
+                The problem must be set up initially according to these rules:
+                
+                1.  The numbers must be lined up as if you were going to
+                    multiply them by hand.
+                
+                2.  The numbers must be followed by a row of hyphens similar to
+                    the line you would draw below the numbers if you were going
+                    to multiply them by hand.  In particular, the rightmost
+                    hyphen in the row must line up with the ones' place digits.
+                    
+                3.  The file must not contain any hyphens beyond those
+                    specified in the previuos rule.
+                    
+                4.  The numbers must be positioned horizontally to leave enough
+                    room for the leftmost digits of the answer.
+
+METHOD:		START Multiply
+		  Look for the last hyphen
+		  GOTO Success?\Yes\No\Abort
+		  Note the hyphen's horizontal position
+		  WHILE For each multiplier digit MD\More\Done
+		    IF Is MD zero?\No\Yes
+		      WHILE MD times\More\Done
+		        Copy multiplicand to a new line
+		        Shift it left by whichever multiplier digit we're processing
+		      ENDWHILE
+		    ELSE
+		      Copy zero to a new line
+		      Shift it left by whichever multiplier digit we're processing
+		    ENDIF
+		  ENDWHILE
+		  Add a row of hyphens on a new line
+		  CALL Add up the "partial products"
+		END
+
+VARIABLE USE:	n0:  Ones' place column number
+		n1:  Multiplier counter
+                n2:  Multiplier digit counter
+                n8:  Scratch register
+                n9:  Scratch register
+
+TAG USE:	A:  Current multiplier digit
+		B:  Current "bottom line"
+
+REVISIONS:	 1 Oct 16 - RAC - Genesis
+//////////////////////////////////////////////////////////////////////////// *\
+
+MMULT\BRjs/f-\BR
+cn0=col-1\BR
+b\CLbjp0\NL\XN0g\NLajp\XN0\NL\CR\XA
+i\NL\BR\CUb\CDbg\NLtb\CR\CH\CU\CU\CLta
+jp0\NLb\CUbja
+cn2=0\BR
+/eMULT1\BR
+eADD\BR
+\MM
+
+MMULT1\BRcn9=((curch<30h)|(curch>39h))\BR\XN9K
+cn1=curch-30h\BR
+cn8=(n1==0)\BR
+\XN8eMULT4\BR
+cn8=!n8\BR
+\XN8eMULT3\BR
+cn2=n2+1\BR
+ja\XN2\CL
+\MM
+
+MMULT2\BR
+cn9=(n1==0)\BR\XN9K
+jbg\NL\XN2\XF
+cn1=n1-1\BR
+\MM
+
+MMULT3\BR
+/eMULT2\BR
+\MM
+
+MMULT4\BR
+cn9=n0-n2-1\BR
+jbi\NL\CU 0\BRjp0\BR
+\XN9eMULT5\NL
+\MM
+
+MMULT5\BR
+i \BR
+\MM
+</pre>
+
+    <p> These were fairly easy to create, but very difficult to debug and
+      modify.  Not sure there's much to be done about that.  Regardless, here's
+      how to do loops and conditional execution if your're so inclined.  </p>
+
+    <h4> IF [condition] THEN [true stuff] </h4>
+
+<pre>
+MIF-THEN\BR
+cn9=[condition]\BR	<-- Evaluate condition and put result in n9
+\XN9[true stuff]	<-- Use n9 value (0 or 1) as a count to conditionally
+\MM			    execute [true stuff]
+</pre>
+
+    <p> If [true stuff] represents a single command that takes a count, then
+      you can code the macro as the example shows.  If [true stuff] represents
+      multiple commands or a single command that does not take a count (like
+      Insert, e.g.) then put [true stuff] in a separate macro.  See MULT5,
+      above, for an example.  </p>
+
+    <h4> IF [condition] THEN [true stuff] ELSE [false stuff] </h4>
+    
+    <p> Do this by coding two back-to-back IF-THENs with the condition inverted
+      for the second one.  <b><i> Be careful that [true stuff] doesn't modify
+      the condition variable (n9 in the example).  </i></b> </p>
+
+<pre>
+MIF-THEN-ELSE\BR
+cn9=[condition]\BR	<-- Evaluate condition
+\XN9[true stuff]	<-- Maybe execute [true stuff]
+cn9=!n9\BR		<-- Invert condition
+\XN9[false stuff]	<-- Maybe execute [false stuff]
+\MM
+</pre>
+
+    <h4> Loops </h4
+
+    <p> Code loops by putting the loop body into a macro and then calling the
+      macro an infinite number of times, like so: </p>
+
+<pre>
+MLOOP-TEST\BR
+/eLOOP-BODY\BR
+\MM
+
+MLOOP-BODY\BR
+[loop body statments go here]
+\MM
+</pre>
+
+    <p> The loop will terminate when one of the commands in the loop body macro
+      is marked as "failed" as described in the Aedit manual.  This can happen
+      "naturally", as when Find fails to find its target, or when a cursor move
+      fails.  You can also terminate a macro explicitly by executing the K
+      command. </p>
+    
+    <h4> DO WHILE [condition] </h4>
+    
+    <p> The trick here is to evaluate the condition within the loop and then
+      explicitly execute the K command when the condition is <i>not</i> true.
+      Like so: </p>
+
+<pre>
+MDO-WHILE-TEST\BR
+/eLOOP-BODY\BR
+\MM
+
+MLOOP-BODY\BR
+cn9=![condition]\BR		<-- Note the NOT operator
+XN9K				<-- Terminate loop when condition is false
+[loop body statments go here]
+\MM
+</pre>
+
+    <h4> REPEAT UNTIL [condition] </h4>
+    
+    <p> Here we test the condition at the end of the loop and terminate when
+    it is true: </p>
+
+<pre>
+MREPEAT-UNTIL-TEST\BR
+/eLOOP-BODY\BR
+\MM
+
+MLOOP-BODY\BR
+[loop body statments go here]
+cn9=[condition]\BR		<-- No NOT operator this time
+XN9K				<-- Terminate loop when condition is true
+\MM
+</pre>
+
+    <p> Note also that there's no reason the check for termination has to be at
+      the beginning or end of the loop.  It could be anywhere.  For that
+      matter, there could be multiple checks for termination throughout the
+      loop.  </p>
+
+    <h4> FOR Loop </h4>
+
+    <p> Finally, a FOR loop is just a WHILE loop with an explicit counter: </p>
+
+<pre>
+MFOR-TEST\BR
+cn0=0\BR			<-- Initialize loop counter
+/eLOOP-BODY\BR
+\MM
+
+MLOOP-BODY\BR
+cn9=(n0>=loop limit)\BR		<-- Terminate loop when n0 reaches some limit
+XN9K
+[loop body statments go here]	<-- Must not change loop counter here
+cn0=n0+1\BR			<-- Increment loop counter
+\MM
+</pre>
+
+  </body>
+</html>
+

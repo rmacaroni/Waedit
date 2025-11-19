@@ -1,0 +1,136 @@
+\* ////////////////////////////////////////////////////////////////////////////
+                                  waedit.mac
+///////////////////////////////////////////////////////////////////////////////
+DESCRIPTION:	A default macro file for Waedit
+
+REVISIONS:	?? Sep 16 - RAC - Genesis
+		24 Sep 16 - RAC - Reorganized, cleaned up, and commented
+                20 Jun 21 - RAC - Fixed the CENTER macro to respect the left
+                		   margin setting.
+                24 Aug 21 - RAC - Added the RLB macro
+                29 Dec 22 - RAC - Added the SORT macro
+                19 Oct 23 - RAC - Added the FIXQUOTE macro
+//////////////////////////////////////////////////////////////////////////// *\
+
+\* INIT - Perform casual startup initialization *\
+
+MINIT\BRsf14\BR\MM
+
+\* MRIB - Move right if blank or tab *\
+\* MLIB - Move left  if blank or tab *\
+
+MMRIB\BRcn9=((CURCH<>32)&(CURCH<>9))\BR\XN9K\CR\MM
+MMLIB\BRcn9=((CURCH<>32)&(CURCH<>9))\BR\XN9K\CL\MM
+
+\* RTB - Remove trailing blanks and advance to the next line *\
+
+MRTB\BRjp999999\BRi \BR\CL/eMLIB\BR\CR\XA\CR\MM
+
+\* RLB - Remove leading blanks and advance to the next line *\
+
+MRLB\BRjp0\NL/emrib\NL\XX\CD\MM
+
+\* CENTER - Center a line of text and advance to the next line *\
+
+MCENTER\BRjp0\BR/eMRIB\BR\XXjp999999\BRi \BR\CL/eMLIB\BR\CR\XA
+cn9=(LMARGN+RMARGN-COL+1)/2\BR
+cn9=-n9*(n9>0)\BR
+jp0\BRi \BRd\CLd\XN9g\NL\CD\MM
+
+\* DA2N9 - Day to N9 *\
+\* MO2N9 - Month to N9 (January = 1) *\
+\* YR2N9 - Year to N9 (two digits) *\
+
+MDA2N9\BRcn9=(date/10000)%100\BR\MM
+MMO2N9\BRcn9=date/1000000\BR\MM
+MYR2N9\BRcn9=date%100\BR\MM
+
+\* AMN2S9 - Abbreviated month name to S9 *\
+
+MAMN2S9\BRiJanFebMarAprMayJunJulAugSepOctNovDec\BR
+eMO2N9\BRcn9=3*(N9-1)\BR-Jan\BR\XN9\CRb3\CRbcS9=SB\BR-Jan\BRdfDec\BRd\MM
+
+\* DDMMMYY - Insert DD MMM YY date into the text *\
+
+MDDMMMYY\BReDDMMMYY1\BReDA2N9\BRi\XN9 \BR
+eAMN2S9\BRi\XS9 \BR
+eYR2N9\BRi\XN9\BR\MM
+MDDMMMYY1\BReDA2N9\BRcn9=(n9>9)\BR\XN9ki \BR\MM
+
+\* Ctrl-B - Insert a skeleton comment header into the text *\
+
+M\02\BRjp0\BRi\NL\BR\CUi/\BR\CLb\CRbi* \BR76g\NL\CR\CHi\NL\NL\BR79g\NL\CR\CH
+i\NLDESCRIPTION:\NL\NLREVISIONS:\TB - RAC - Genesis\NL\BR76g\NL
+\CR\CHi */\NL\BR- - R\BReDDMMMYY\BR4\CU\BR\MM
+
+\* QUOTE - Set up for a quote on the Chaski forum *\
+
+MQUOTE\BRi[quote=x]\NL\NL[/quote]\NL\NL\CU\CU\CU\CU\BR\MM
+
+\* URL - Set up for a link on the Chaski forum *\
+
+MURL\BRi[url=]\NL\NL[/url]\NL\BR\MM
+
+\* LIST - Set up for a list on the Chaski forum *\
+
+MLIST\BRi[list]\NL\NL[*]\NL\NL[*]\NL\NL[*]\NL\NL[/list]\NL\NL\BR\MM
+
+\* FIXLIST - Add boxes to grocery lists *\
+
+MFIXLISTITEM\BRi|---|\NL|   | \BRf\NL\BR\BR\MM
+MFIXLIST\BRjs/efixlistitem\NL\CL\CH\XA\BR\MM
+
+\* COMMAND and UNCOMMENT - Disable and restore JavaScript code *\
+
+MCOMMENT\BRjp0\NLi//--- \CD\BR\MM
+MUNCOMMENT\BRjp0\NLr//--- \BR \RB\BR\BR\CD\BR\BR\MM
+
+\* COUNTLETTERS - Make letter frequency histogram to help solve cryptograms *\
+
+MCOUNTLETTERS\BRtab\CRb\CLcn0=curch-92\NLjl\XN0\NLg\NLja\CR\MM
+
+\* SORT - Sort the text buffer *\
+
+MSORT\BR
+je\CLcn9=(curch<>13)\BR\CR\XN9eSORT_ADD_CR\BR
+cn0=0\BR
+/eSORT_DO_ONE_PASS\BR
+\MM
+
+MSORT_ADD_CR\BRi\NL\BReRLB\BR\MM
+
+MSORT_DO_ONE_PASS\BR
+cn0\BR\XN0K
+cn0=-1\BR
+js
+/eSORT_DO_ONE_LINE\BR
+\MM
+
+MSORT_DO_ONE_LINE\BR
+\CDcn9=EOF\BR\XN9k\BR
+jp0\BR
+/eSORT_COMPARE\BR
+\XN9eSORT_SWAP\BR
+\MM
+
+MSORT_COMPARE\BR
+\CU
+cn1=UPCH\BR
+\CD
+cn2=UPCH\BR
+cn9=n1>n2\BR
+cn8=n1<>n2 | n1==13\BR
+\XN8k\BR
+\CR
+\MM
+
+MSORT_SWAP\BR
+jp0\BR
+d\CDd\CUg\NL\CD
+cn0=0\BR
+\MM
+
+MTABZOUT\BRsnyjs/efixonetab\NLsnn\MM
+
+MFIXONETAB\BRf\TB\BR\RBi\TB\BR\MM
+
