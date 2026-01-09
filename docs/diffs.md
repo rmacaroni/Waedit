@@ -1,4 +1,4 @@
-Margins are ata 8, 11, 78
+Margins are at 8, 11, 78
 
 # Differences Between AEDIT and Waedit
 
@@ -12,11 +12,12 @@ differs from AEDIT.
   <thead>
     <tr>
       <th align="center">Manual Page</th>
-      <th align="center">AEDIT Behavior</th>
-      <th align="center">Waedit Behavior</th>
+      <th align="center">How AEDIT Works</th>
+      <th align="center">How Waedit Works</th>
     </tr>
   </thead>
   <tbody>
+*******************************************************************************
     <tr>
       <td align="center">
         <p>12</p>
@@ -31,6 +32,7 @@ differs from AEDIT.
            Windows program.</p>
       </td>
     </tr>
+*******************************************************************************
     <tr>
       <td align="center">
         <p>12, 19</p>
@@ -40,13 +42,14 @@ differs from AEDIT.
            of the display.</p>
       </td>
       <td>
-        <p>Waedit displays prompts in a single status bar.  Waedit displays
+        <p>Waedit displays prompts in a single status bar, and     displays
            mesages by either temporarily overwriting the prompts, or via pop-up
            windows.  Waedit's status bar also shows the current editing mode
            (Command, Insert, or Exchange) along with the current cursor
            position.</p>
       </td>
     </tr>
+*******************************************************************************
     <tr>
       <td align="center">
         <p>13</p>
@@ -71,214 +74,833 @@ differs from AEDIT.
          </ul>
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
+      <td align="center">
         <p>14</p>
       </td>
       <td>
-        <p>AEDIT indicates the beginning and end of a selected block of
-        text with the @ sign.</p>
+
+        <p>AEDIT indicates the beginning and end of a selected block of text
+           with the @ sign.</p>
+
       </td>
       <td>
+
         <p>Waedit highlights selected text blocks in white text on a dark
-        backtround.</p>
+           backtround.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
+      <td align="center">
         <p>15</p>
       </td>
       <td>
+
         <p>AEDIT has an "Other" command that enables editing two files
            simultaneously.  </p>
+
       </td>
       <td>
+
         <p>Waedit does not implement the "Other" command.  If you want to edit
            two (or more) files at the same time, invoke multiple copies of
            Waedit.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>19</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT implements fixed 80-column display.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit runs in a window that can be resized to any reasonable
+           dimensions.  </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>20, 22</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT prompts for both single-character commands and longer strings
+           on the prompt line.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit uses pop-up dialogs to prompt for longer strings.  </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>22</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT allows line-edited input up to 60 characters in length, and
+           provides a mechanims for entering control characters.  </p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>In Waedit, line-edited input can be of any length, but there is no
+           way to enter control characters.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>22</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT displays certain status information in a message line</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit has no corresponding display, largely because the status
+           displayed either does not apply to Waedit, or is displayed in some
+           other way.  </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>23</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT beeps to warn of certain illegal input</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit is mercifully silent</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>23</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT splits long lines into 255-character segments, and implements
+           a somewhat cumbersome method for viewing lines longer than the
+           80-character display width.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit supports lines of unlimited length.  It displays however many
+           characters will fit into the current window, with automatic
+           horizontal and vertical scrolling to keep the cursor always in
+           view.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>23</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT assumes lines are terminated by CR/LF pairs.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>When reading a file, Waedit detects whether the lines are terminated
+           by CRs, LFs, or CR/LF pairs, and handles the input accordingly.  It
+           always writes files with CR/LF line terminators.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>24</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT displays the command execution count on the mssage line./p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit temporarily replaces the "mode" field of the status bar with
+           the command execution count as it is being entered.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>24</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>AEDIT implements three buffers as described in the manual.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Since Waedit does not implement the "Other" command, it doesn't
+        have anything corresponding to AEDIT's "OTHER" buffer.</p>
+        <p>Waedit uses the Windows clipboard in place of AEDIT's 2K "block
+        buffer".  This removes the 2K limit, and allows for easy cutting and
+        pasting of text between Waedit and other programs. </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>25, 26</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>In AEDIT, there is "no recovery" from some of the delete commands,
+           and AEDIT explicitly limits the count on the delch command do
+           prevent accidental destruction of the file.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>Waedit has an Undo/Redo feature that will recover from such
+           accidents.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>27</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>The AEDIT manual suggests configuring the Undo command to
+           Ctrl-Y for some obscure reason related to a mysterious "Terminal
+           Support Code".</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>In Waedit, the assignment of program functions to keyboard keys is
+           fixed.  The Undo command is assigned to Ctrl-U.</p>
+
+        <p> <b>Note:</b> The undo function invoked via Ctrl-U specifically
+           relates to the resoration of text deleted by the most recent delete
+           left (Ctrl-X), delete right (Ctrl-A), or delete line (Ctrl-Z)
+           command.  Do not confuse this with the global Undo command described
+           later in this document that reverses the effect of <i>any</i>
+           command that changes the text buffer.  </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>28</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>Ctrl-C and the forward shash affect Insert Mode as described in the
+        AEDIT manual.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>In Waedit, the behaviors described for Ctrl-C and the forward shash
+           are not implemented.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>29</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>In AEDIT, Xchange mode works as described in the manual.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>In Waedit, there is no limit to the number of characters that can be
+           exchanged.  In addition, rubout works slightly differently, and
+           Ctrl-C is ignored.  </p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>30, 31</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>The AEDIT Find and -Find commands works as described in the
+           manual.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>The corresponding commands in Waedit work generally the same, except
+           the target string is entered via a pop-up dialog rather than the
+           prompt line, and Waedit does not report the number of strings found
+           or the "not found" message.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>32, 33</p>
       </td>
       <td>
-        <p>AEDIT Behavior</p>
+
+        <p>The AEDIT Replace and ?Replace commands work as described in the
+           manual.</p>
+
       </td>
       <td>
-        <p>Waedit behavior</p>
+
+        <p>The corresponding commands in Waedit work generally the same, except
+           the target and replacement strings are entered via pop-up dialogs
+           rather than the prompt line, and Waedit does not report the "not
+           found" message.</p>
+
       </td>
     </tr>
+*******************************************************************************
     <tr>
-      <td>
-        <p>Page Number</p>
+      <td align="center">
+        <p>##</p>
       </td>
       <td>
+
         <p>AEDIT Behavior</p>
+
       </td>
       <td>
+
         <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>##</p>
+      </td>
+      <td>
+
+        <p>AEDIT Behavior</p>
+
+      </td>
+      <td>
+
+        <p>Waedit behavior</p>
+
       </td>
     </tr>
   </tbody>
 </table>
 
-## More Markdown Below
+Various function keys:
 
-- This section is normal Markdown again
-- The table above uses HTML only where needed
-- GitHub renders this reliably
+rubout
+delch
+dell
+delr
+delli
+undo (Ctrl-U)
+mexec
+fetn
+fets
