@@ -42,8 +42,8 @@ differs from AEDIT.
            of the display.</p>
       </td>
       <td>
-        <p>Waedit displays prompts in a single status bar, and     displays
-           mesages by either temporarily overwriting the prompts, or via pop-up
+        <p>Waedit displays prompts in a single status bar, and displays mesages
+           by either temporarily overwriting the prompts, or via pop-up
            windows.  Waedit's status bar also shows the current editing mode
            (Command, Insert, or Exchange) along with the current cursor
            position.</p>
@@ -95,7 +95,7 @@ differs from AEDIT.
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>15</p>
+        <p>15, 41</p>
       </td>
       <td>
 
@@ -265,11 +265,12 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>Since Waedit does not implement the "Other" command, it doesn't
-        have anything corresponding to AEDIT's "OTHER" buffer.</p>
-        <p>Waedit uses the Windows clipboard in place of AEDIT's 2K "block
-        buffer".  This removes the 2K limit, and allows for easy cutting and
-        pasting of text between Waedit and other programs. </p>
+        <p>Since Waedit does not implement the "Other" command, it doesn't have
+           anything corresponding to AEDIT's "OTHER" buffer.  </p>
+
+        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K byte
+           "block buffer".  This removes the 2K limit, and allows for easy
+           cutting and pasting of text between Waedit and other programs.  </p>
 
       </td>
     </tr>
@@ -397,96 +398,139 @@ differs from AEDIT.
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>35</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, the jump command does not have a match subcommand</p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>In Waedit, the match subcommand, executed by pressing M, works like
+           this: If the cursor is on a parenthesis, a square bracket, or a
+           curly brace, the cursor moves to the matching character if one
+           exists.  Otherwise, the cursor does not move.</p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>36, 37</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> In AEDIT, the Buffer and Delete subcommands use an internal 2K byte
+           "block buffer" to to store blocks of text.</p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K byte
+           "block buffer".  This removes the 2K limit, and allows for easy
+           cutting and pasting of text between Waedit and other programs.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>39</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, the Get command retrieves the contents of its block buffer
+           if no filename is given.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>In Waedit, the Get command retrieves the contents of the Windows
+           clipboard if no filename is given.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>40</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT's View command works as described in the manual.</p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not support the "set viewrow" command.  In Waedit, the
+           viewrow is always set to the default R/5, as described in the
+           manual.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>15, 41</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT has an "Other" command that enables editing two files
+           simultaneously.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not implement the "Other" command.  If you want to edit
+           two (or more) files at the same time, invoke multiple copies of
+           Waedit.</p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>43</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, the Set command has several subcommands as described in
+           the manual.</p>
+
+      </td>
+      <td>
+        <p>Waedit does not support these Set subcommands:</p>
+         <ul> Autonl </li>
+         <li> Bak-File </li>
+         <li> Go </li>
+         <li> Highbit </li>
+         <li> Leftcol </li>
+         <li> Showfind </li>
+         <li> Viewrow </li>
+         </ul>
+       <p> Waedit adds these Set subcommand:</p>
+         <ul> Font - Sets the height of the displayed font, in pixels.</li>
+         <li> flOw - Enables interaction with a proprietary flowchart drawing
+              program.  Has no effect if the flowchart program is not
+              installed. </li>
+         </ul>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>52</p>
+      </td>
+      <td>
+
+        <p>AEDIT has a Hex command as described in the manual. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not implement the Hex command. </p>
 
       </td>
     </tr>

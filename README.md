@@ -66,7 +66,9 @@ file for details.
 
 # Known Bugs
 
-## Long Strings
+## Long Strings mess up status bar
 
-## Hidden Cursor
+## Hidden Cursor sometimes below last line
+
+## Block -> Put -> Aborb with Ctrl-C -> Cursor goes to beginning of the file?
 
