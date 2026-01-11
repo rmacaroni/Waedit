@@ -501,7 +501,8 @@ differs from AEDIT.
       </td>
       <td>
         <p>Waedit does not support these Set subcommands:</p>
-         <ul> Autonl </li>
+         <ul> 
+         <li> Autonl </li>
          <li> Bak-File </li>
          <li> Go </li>
          <li> Highbit </li>
@@ -510,7 +511,8 @@ differs from AEDIT.
          <li> Viewrow </li>
          </ul>
        <p> Waedit adds these Set subcommand:</p>
-         <ul> Font - Sets the height of the displayed font, in pixels.</li>
+         <ul> 
+         <li> Font - Sets the height of the displayed font, in pixels.</li>
          <li> flOw - Enables interaction with a proprietary flowchart drawing
               program.  Has no effect if the flowchart program is not
               installed. </li>
@@ -537,80 +539,88 @@ differs from AEDIT.
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>54-56</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT's Quit command works as described in the manual. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit's Quit command is similar but somewhat simpler becase Waedit
+           does not support the secondary file, the viewonly option, or the
+           forwardonly option.</p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>58</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT's Window command works as described in the manual. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not support the Window subcommand. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>59</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, pressing K invokes the Kill_wind command.
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not implement the Kill_wnd command.  However Waedit does
+           have an entirely unrelated Kill command that's provides for
+           conditional execution within macros.  See the entries dated
+           September 18 and later in the notes.html file for details.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>60</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT's !system command works as described in the manual.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not support the !system command.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>65-76</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT is invoked as described in Chapter 4 of the manual. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> In Waedit, the only command line parameter is the input filename.
+           So typing "Waedit <filename>" opens <filename> for editing, while
+           typing "Waedit" (without a filename) starts Waedit with an empty
+           buffer.  </p>
 
       </td>
     </tr>
@@ -948,3 +958,4 @@ undo (Ctrl-U)
 mexec
 fetn
 fets
+
