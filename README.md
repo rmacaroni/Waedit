@@ -72,3 +72,5 @@ file for details.
 
 ## Block -> Put -> Aborb with Ctrl-C -> Cursor goes to beginning of the file?
 
+## Answers to questions when executing macros.  (See p. 84 of the AEDIT manual.)
+

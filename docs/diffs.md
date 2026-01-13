@@ -42,10 +42,10 @@ differs from AEDIT.
            of the display.</p>
       </td>
       <td>
-        <p>Waedit displays prompts in a single status bar, and displays mesages
-           by either temporarily overwriting the prompts, or via pop-up
-           windows.  Waedit's status bar also shows the current editing mode
-           (Command, Insert, or Exchange) along with the current cursor
+        <p>Waedit displays prompts in a single status bar, and displays
+           messages by either temporarily overwriting the prompts, or via
+           pop-up windows.  Waedit's status bar also shows the current editing
+           mode (Command, Insert, or Exchange) along with the current cursor
            position.</p>
       </td>
     </tr>
@@ -88,7 +88,7 @@ differs from AEDIT.
       <td>
 
         <p>Waedit highlights selected text blocks in white text on a dark
-           backtround.</p>
+           background.</p>
 
       </td>
     </tr>
@@ -118,7 +118,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>AEDIT implements fixed 80-column display.</p>
+        <p>AEDIT implements a fixed 80-column display.</p>
 
       </td>
       <td>
@@ -153,7 +153,7 @@ differs from AEDIT.
       <td>
 
         <p>AEDIT allows line-edited input up to 60 characters in length, and
-           provides a mechanims for entering control characters.  </p>
+           provides a mechanism for entering control characters.  </p>
 
       </td>
       <td>
@@ -170,7 +170,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>AEDIT displays certain status information in a message line</p>
+        <p>AEDIT displays certain status information in a message line.</p>
 
       </td>
       <td>
@@ -188,12 +188,12 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>AEDIT beeps to warn of certain illegal input</p>
+        <p>AEDIT beeps to warn of certain illegal input.</p>
 
       </td>
       <td>
 
-        <p>Waedit is mercifully silent</p>
+        <p>Waedit is mercifully silent.</p>
 
       </td>
     </tr>
@@ -243,7 +243,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>AEDIT displays the command execution count on the mssage line./p>
+        <p>AEDIT displays the command execution count on the message line.</p>
 
       </td>
       <td>
@@ -282,7 +282,7 @@ differs from AEDIT.
       <td>
 
         <p>In AEDIT, there is "no recovery" from some of the delete commands,
-           and AEDIT explicitly limits the count on the delch command do
+           and AEDIT explicitly limits the count on the delch command to
            prevent accidental destruction of the file.</p>
 
       </td>
@@ -311,7 +311,7 @@ differs from AEDIT.
            fixed.  The Undo command is assigned to Ctrl-U.</p>
 
         <p> <b>Note:</b> The undo function invoked via Ctrl-U specifically
-           relates to the resoration of text deleted by the most recent delete
+           relates to the restoration of text deleted by the most recent delete
            left (Ctrl-X), delete right (Ctrl-A), or delete line (Ctrl-Z)
            command.  Do not confuse this with the global Undo command described
            later in this document that reverses the effect of <i>any</i>
@@ -326,13 +326,13 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>Ctrl-C and the forward shash affect Insert Mode as described in the
+        <p>Ctrl-C and the forward slash affect Insert Mode as described in the
         AEDIT manual.</p>
 
       </td>
       <td>
 
-        <p>In Waedit, the behaviors described for Ctrl-C and the forward shash
+        <p>In Waedit, the behaviors described for Ctrl-C and the forward slash
            are not implemented.</p>
 
       </td>
@@ -362,7 +362,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>The AEDIT Find and -Find commands works as described in the
+        <p>The AEDIT Find and -Find commands work as described in the
            manual.</p>
 
       </td>
@@ -402,7 +402,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>In AEDIT, the jump command does not have a match subcommand</p>
+        <p>In AEDIT, the jump command does not have a match subcommand.</p>
 
       </td>
       <td>
@@ -422,7 +422,7 @@ differs from AEDIT.
       <td>
 
         <p> In AEDIT, the Buffer and Delete subcommands use an internal 2K byte
-           "block buffer" to to store blocks of text.</p>
+           "block buffer" to store blocks of text.</p>
 
       </td>
       <td>
@@ -510,7 +510,7 @@ differs from AEDIT.
          <li> Showfind </li>
          <li> Viewrow </li>
          </ul>
-       <p> Waedit adds these Set subcommand:</p>
+       <p> Waedit adds these Set subcommands:</p>
          <ul> 
          <li> Font - Sets the height of the displayed font, in pixels.</li>
          <li> flOw - Enables interaction with a proprietary flowchart drawing
@@ -548,7 +548,7 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>Waedit's Quit command is similar but somewhat simpler becase Waedit
+        <p>Waedit's Quit command is similar but somewhat simpler because Waedit
            does not support the secondary file, the viewonly option, or the
            forwardonly option.</p>
 
@@ -577,13 +577,13 @@ differs from AEDIT.
       </td>
       <td>
 
-        <p>In AEDIT, pressing K invokes the Kill_wind command.
+        <p>In AEDIT, pressing K invokes the Kill_wnd command. </p>
 
       </td>
       <td>
 
         <p>Waedit does not implement the Kill_wnd command.  However Waedit does
-           have an entirely unrelated Kill command that's provides for
+           have an entirely unrelated Kill command that provides for
            conditional execution within macros.  See the entries dated
            September 18 and later in the notes.html file for details.  </p>
 
@@ -620,199 +620,223 @@ differs from AEDIT.
         <p> In Waedit, the only command line parameter is the input filename.
            So typing "Waedit <filename>" opens <filename> for editing, while
            typing "Waedit" (without a filename) starts Waedit with an empty
-           buffer.  </p>
+           buffer.  You can also invoke Waedit by selecting a file with a file
+           type (.txt, e.g.) that has been associated with Waedit.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>78</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> AEDIT displays a message to indicate that a macro is being defined.
+           </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> Waedit changes the alignment bars from blue to red when macro
+           definition is underway.  </p>
+    
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>78</p>
+      </td>
+      <td>
+
+        <p>AEDIT limits macro names to 60 characters. </p>
+
+      </td>
+      <td>
+
+        <p>Waedit allow macro names of any length. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>78</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> AEDIT reserves limited memory for macro storage.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> Waedit imposes no such limit. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>80</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> If you specify a null filename with the Macro Get subcommand, AEDIT
+           gets the present text buffer as a macro file.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit gives an error in this circumstance.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>81</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, the Macro List subcommand lists the names all currently defined
+        macros. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>In Waedit, the Macro List command inserts all currently defined
+           macro definitions into the text.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>83</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>The AEDIT manual describes two macro modes. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit only supports modeless macros. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>84</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> When executing a macro, AEDIT gets responses to certain prompts
+           from the keyboard instead of from the macro itself.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>When executing a macro, Waedit gets <i>all</i> input from the macro.
+           This is a bug in Waedit.  It can be avoided to a large extent by
+           avoiding (in macros) the few commands that generate the prompts
+           listed in the manual.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>84</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>AEDIT limits macro nesting to 8 levels</p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>In Waedit, the limit is 1000 levels. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>97</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>The AEDIT manual specifies a set of read-only string variables.
+           </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not support SI, SO, or SW. </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>99=101</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>The AEDIT manual specifies a set of local variables. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>Waedit does not support these local varaibles:</p>
+        <ul>
+          <li> CNTEXE </li>
+          <li> CNTFND </li>
+          <li> CNTMAC </li>
+          <li> CNTREP </li>
+          <li> CURWD </li>
+          <li> INOTHR </li>
+          <li> LSTFND </li>
+          <li> NXTTAB </li>
+          <li> NXTWD </li>
+        </ul>
+
+        <p> In WAEDIT, the variable for the current right margin setting is
+           spelled RMARGN for consistency with LMARGN and IMARGN.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>103-110</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
-
-      </td>
-      <td>
-
-        <p>Waedit behavior</p>
-
-      </td>
-    </tr>
-*******************************************************************************
-    <tr>
-      <td align="center">
-        <p>##</p>
-      </td>
-      <td>
-
-        <p>AEDIT Behavior</p>
+        <p>The AEDIT manual describes the Calc command.</p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>The Waedit Calc command works substantially the same as in AEDIT,
+           with these exceptions: </p>
 
-      </td>
-    </tr>
-*******************************************************************************
-    <tr>
-      <td align="center">
-        <p>##</p>
-      </td>
-      <td>
+        <ul>
 
-        <p>AEDIT Behavior</p>
+        <li> Waedit recognizes only single and double quotes as string
+           delimiters.  </li>
 
-      </td>
-      <td>
+        <li> Waedit does not limit the length of string constants or string
+           variables.  </li>
 
-        <p>Waedit behavior</p>
+        <li> Waedit does not allow nested assignments.  In other words,
+           statements like "N1 = N2 = 55" and "3 + 5 + (N3 = 9)" are illegal.
+           </li>
+
+        </ul>
 
       </td>
     </tr>
@@ -958,4 +982,3 @@ undo (Ctrl-U)
 mexec
 fetn
 fets
-
