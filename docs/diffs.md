@@ -20,6 +20,60 @@ differs from AEDIT.
 *******************************************************************************
     <tr>
       <td align="center">
+        <p>--</p>
+      </td>
+      <td>
+
+        <p> AEDIT does not have a true Undo/Redo function.  </p>
+
+      </td>
+      <td>
+
+        <p> Waedit captures a snapshot of the text buffer after every command
+           that changes the text.  Repeatedly pressing Z in the command mode
+           will undo the most recent changes by backing up one at a time
+           through the most recent snapshots.  Waedit will store up to 1000
+           snapshots.  When that limit is reached, it deletes the oldest
+           snapshots as needed to make room for new ones.  </p>
+
+        <p> Pressing Y at the command line cycles <i>forward</i> through the
+           stored snapshots, effectively redoing any previous commands that
+           were undone by pressing Z.  </p>
+
+        <p> The Z (Undo) command issues an error if an attempt is made to back
+           up past the beginning of the stored snapshots.  Likewise, the Y
+           (Redo) command issues an error if an attempt is made to go beyond
+           the end of the stored snapshots.  </p>
+
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
+        <p>--</p>
+      </td>
+      <td>
+
+        <p> AEDIT has no mouse support. </p>
+
+      </td>
+      <td>
+
+        <p> Waedit has limited mouse support: <p>
+
+        <ul>
+
+          <li> Right clicking on a chracter will move the cursor to that
+               character.  </li>
+ 
+          <li> The scroll wheel will scroll the text vertically.  </li>
+
+        </ul>
+      </td>
+    </tr>
+*******************************************************************************
+    <tr>
+      <td align="center">
         <p>12</p>
       </td>
       <td>
@@ -60,17 +114,21 @@ differs from AEDIT.
            to terminal keys.  </p>
       </td>
       <td>
+
         <p>In Waedit, the assignment of program functions to keyboard keys is
-           fixed, generally following standard Windows convention.  A separate
-           table near the end of this document specifies these assignments
-           completely.  To help make sense of the tutorial in Chapter 1 of the
-           AEDIT manual, here's a quick list of the function-to-key assignments
-           mentioned there:</p>
+           fixed, generally following standard Windows convention.  Here are
+           the assignments:</p>
+
          <ul>
          <li> rubout = Backspace </li>
          <li> delch  = Del </li>
          <li> delli = Ctrl-Z </li>
          <li> delr = Ctrl-A </li>
+         <li> dell = Ctrl-X </li>
+         <li> undo = Ctrl-U </li>
+         <li> mexec = Ctrl-E </li>
+         <li> fetn = Ctrl-N </li>
+         <li> fets = Ctrl-V </li>
          </ul>
       </td>
     </tr>
@@ -311,10 +369,10 @@ differs from AEDIT.
            fixed.  The Undo command is assigned to Ctrl-U.</p>
 
         <p> <b>Note:</b> The undo function invoked via Ctrl-U specifically
-           relates to the restoration of text deleted by the most recent delete
+           relates to the retrieval of text deleted by the most recent delete
            left (Ctrl-X), delete right (Ctrl-A), or delete line (Ctrl-Z)
-           command.  Do not confuse this with the global Undo command described
-           later in this document that reverses the effect of <i>any</i>
+           command.  Do not confuse this with the global Undo command at the
+           beginning of this document that reverses the effect of <i>any</i>
            command that changes the text buffer.  </p>
 
       </td>
@@ -843,80 +901,76 @@ differs from AEDIT.
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>111-113</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> AEDIT includes a file <i>useful.mac</i> that contains a number of
+        pre-written macros. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> Some of the macros in <i>useful.mac</i> do not work with Waedit.
+           So, to avoid confusion, <i>useful.mac</i> is not included with
+           Waedit.  Instead, the included file <i>waedit.mac</i> contains
+           examples of macros that do work with Waedit.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>111</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p>In AEDIT, the memory available to store macros is limited. </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p>In Waedit, the memory for storing macros is essentially unlimited.
+           </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>114-117</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
+        <p> The AEDIT manual shows a techniqe involving the Find command for
+           simulating conditional branches and loops within macros, as well as
+           a few examples taken from the <i>useful.mac</i> file that use
+           this technique.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> Waedit macros use a slightly different technique for simulating
+           conditional branches and loops within macros.  the entries dated
+           September 18 and later in the notes.html file explain the technique
+           and give examples of its use.  </p>
 
       </td>
     </tr>
 *******************************************************************************
     <tr>
       <td align="center">
-        <p>##</p>
+        <p>119-126</p>
       </td>
       <td>
 
-        <p>AEDIT Behavior</p>
-
-      </td>
-      <td>
-
-        <p>Waedit behavior</p>
-
-      </td>
-    </tr>
-*******************************************************************************
-    <tr>
-      <td align="center">
-        <p>##</p>
-      </td>
-      <td>
-
-        <p>AEDIT Behavior</p>
+        <p> Chapter 9 of the AEDIT describes how to configure AEDIT for use
+           with various terminals.  </p>
 
       </td>
       <td>
 
-        <p>Waedit behavior</p>
+        <p> None of this applies to Waedit </p>
 
       </td>
     </tr>
@@ -971,14 +1025,3 @@ differs from AEDIT.
   </tbody>
 </table>
 
-Various function keys:
-
-rubout
-delch
-dell
-delr
-delli
-undo (Ctrl-U)
-mexec
-fetn
-fets
