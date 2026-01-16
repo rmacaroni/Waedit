@@ -1,7 +1,7 @@
 \* ////////////////////////////////////////////////////////////////////////////
-                                  waedit.mac
+                                 examples.mac
 ///////////////////////////////////////////////////////////////////////////////
-DESCRIPTION:	A default macro file for Waedit
+DESCRIPTION:	Example macros for Waedit
 
 REVISIONS:	?? Sep 16 - RAC - Genesis
 		24 Sep 16 - RAC - Reorganized, cleaned up, and commented
@@ -9,7 +9,6 @@ REVISIONS:	?? Sep 16 - RAC - Genesis
                 		   margin setting.
                 24 Aug 21 - RAC - Added the RLB macro
                 29 Dec 22 - RAC - Added the SORT macro
-                19 Oct 23 - RAC - Added the FIXQUOTE macro
 //////////////////////////////////////////////////////////////////////////// *\
 
 \* INIT - Perform casual startup initialization *\
@@ -57,37 +56,10 @@ eAMN2S9\BRi\XS9 \BR
 eYR2N9\BRi\XN9\BR\MM
 MDDMMMYY1\BReDA2N9\BRcn9=(n9>9)\BR\XN9ki \BR\MM
 
-\* Ctrl-B - Insert a skeleton comment header into the text *\
-
-M\02\BRjp0\BRi\NL\BR\CUi/\BR\CLb\CRbi* \BR76g\NL\CR\CHi\NL\NL\BR79g\NL\CR\CH
-i\NLDESCRIPTION:\NL\NLREVISIONS:\TB - RAC - Genesis\NL\BR76g\NL
-\CR\CHi */\NL\BR- - R\BReDDMMMYY\BR4\CU\BR\MM
-
-\* QUOTE - Set up for a quote on the Chaski forum *\
-
-MQUOTE\BRi[quote=x]\NL\NL[/quote]\NL\NL\CU\CU\CU\CU\BR\MM
-
-\* URL - Set up for a link on the Chaski forum *\
-
-MURL\BRi[url=]\NL\NL[/url]\NL\BR\MM
-
-\* LIST - Set up for a list on the Chaski forum *\
-
-MLIST\BRi[list]\NL\NL[*]\NL\NL[*]\NL\NL[*]\NL\NL[/list]\NL\NL\BR\MM
-
-\* FIXLIST - Add boxes to grocery lists *\
-
-MFIXLISTITEM\BRi|---|\NL|   | \BRf\NL\BR\BR\MM
-MFIXLIST\BRjs/efixlistitem\NL\CL\CH\XA\BR\MM
-
-\* COMMAND and UNCOMMENT - Disable and restore JavaScript code *\
+\* COMMAND and UNCOMMENT - Disable and restore lines of code *\
 
 MCOMMENT\BRjp0\NLi//--- \CD\BR\MM
 MUNCOMMENT\BRjp0\NLr//--- \BR \RB\BR\BR\CD\BR\BR\MM
-
-\* COUNTLETTERS - Make letter frequency histogram to help solve cryptograms *\
-
-MCOUNTLETTERS\BRtab\CRb\CLcn0=curch-92\NLjl\XN0\NLg\NLja\CR\MM
 
 \* SORT - Sort the text buffer *\
 
@@ -130,7 +102,8 @@ d\CDd\CUg\NL\CD
 cn0=0\BR
 \MM
 
-MTABZOUT\BRsnyjs/efixonetab\NLsnn\MM
+\* TABZOUT - Replace tabs with spaces *\
 
+MTABZOUT\BRsnyjs/efixonetab\NLsnn\MM
 MFIXONETAB\BRf\TB\BR\RBi\TB\BR\MM
 
