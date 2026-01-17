@@ -245,7 +245,7 @@ The table below explains the major differences between Waedit and Intel's origin
       <td>
         <p>Since Waedit does not implement the "Other" command, it doesn't have
            anything corresponding to AEDIT's "OTHER" buffer.  </p>
-        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K byte
+        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K-byte
            "block buffer".  This removes the 2K limit, and allows for easy
            cutting and pasting of text between Waedit and other programs.  </p>
       </td>
@@ -359,11 +359,11 @@ The table below explains the major differences between Waedit and Intel's origin
         <p>36, 37</p>
       </td>
       <td>
-        <p> In AEDIT, the Buffer and Delete subcommands use an internal 2K byte
+        <p> In AEDIT, the Buffer and Delete subcommands use an internal 2K-byte
            "block buffer" to store blocks of text.</p>
       </td>
       <td>
-        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K byte
+        <p> Waedit uses the Windows clipboard in place of AEDIT's 2K-byte
            "block buffer".  This removes the 2K limit, and allows for easy
            cutting and pasting of text between Waedit and other programs.  </p>
       </td>
@@ -678,7 +678,7 @@ The table below explains the major differences between Waedit and Intel's origin
       <td>
         <p> Some of the macros in <i>useful.mac</i> do not work with Waedit.
            To avoid confusion, <i>useful.mac</i> is not included with
-           Waedit.  Instead, the included file <a href="..\src\examples.mac">examples.mac</a> contains
+           Waedit.  Instead, the included file <a href="../src/examples.mac">examples.mac</a> contains
            examples of macros that do work with Waedit.  </p>
       </td>
     </tr>
@@ -709,7 +709,7 @@ The table below explains the major differences between Waedit and Intel's origin
            conditional branches and loops within macros.  The entries dated
            September 18 and later in the <a href="notes.html">notes.html</a>
            file explain the technique and give examples of its use.  The
-           <a href="..\src\examples.mac">examples.mac</a> file contains
+           <a href="../src/examples.mac">examples.mac</a> file contains
            additional examples.  </p>
       </td>
     </tr>

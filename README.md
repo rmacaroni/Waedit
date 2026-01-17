@@ -8,21 +8,21 @@ AEDIT was notable for its friendly user interface and comprehensive editing feat
 
 ## Okay, So *What Is Waedit?*
 
-Waedit (think "AEDIT for Windows") is an "almost clone" of AEDIT which generally preserves AEDIT's user interface, while at the same time exploiting modern hardware as appropriate.  In particular:
+Waedit (think "AEDIT for Windows") is an "almost clone" of AEDIT that generally preserves AEDIT's user interface, while at the same time exploiting modern hardware as appropriate.  In particular:
 
-- AEDIT assumed an 80-column display, and implemented a somewhat clunky (by today's standards) mechanism for dealing with long lines.  Waedit runs in a resizable window that can be as wide as your monitor.  If you then have lines that are still to long to fit, Waedit will automatically scroll horizontally as needed to keep the cursor in view.
+- AEDIT assumed an 80-column display, and implemented a somewhat clunky (by today's standards) mechanism for dealing with long lines.  Waedit runs in a resizable window that can be as wide as your monitor.  If you then have lines that are still too long to fit, Waedit will automatically scroll horizontally as needed to keep the cursor in view.
 
 - Waedit uses the Windows clipboard in place of AEDIT's fixed-size "block buffer".  This eliminates the size restriction, and also allows easy cut-and-paste transfer of text to and from other programs.
 
 - Waedit provides a multi-level undo/redo feature not present in AEDIT.
 
-- Waedit provides limited mouse support which, again, was not present in AEDIT.
+- Waedit provides limited mouse support which again, was not present in AEDIT.
 
 - Waedit relaxes several other minor memory-related restrictions in AEDIT.
 
 # How Do I Compile and Run Waedit?
 
-The files in this repository support compilation from either within Visual Studio or the from command line.  To use Visual Studio, simply load the solution file (waedit.sln) into Visual Studio and build the project normally.  Alternately, execute either gor.bat or god.bat from the command line to create the release or debug version, respectively.
+The files in this repository support compilation from either within Visual Studio or from the command line.  To use Visual Studio, simply load the solution file (waedit.sln) into Visual Studio and build the project normally.  Alternatively, execute either gor.bat or god.bat from the command line to create the release or debug version, respectively.
 
 Waedit doesn't require any installation per se.  Just run the .EXE file in the normal fashion.
 
