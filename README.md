@@ -28,7 +28,9 @@ Waedit doesn't require any installation per se.  Just run the .EXE file in the n
 
 # What if I Don't Want to Compile It?
 
-Grab the pre-compiled .EXE and WAEDIT.MAC from the ???  TBD -- what do I call the "release" area ???
+Grab the pre-compiled .EXE and WAEDIT.MAC from the GitHub **Releases** page:
+
+https://github.com/rmacaroni/Waedit/releases
 
 # How Do I Use It?
 
