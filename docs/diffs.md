@@ -1,16 +1,6 @@
-Need a link in this file to the AEDIT manual.
-Need a link in this file to the notes.html file.
-Need a link in this file to the examples.mac file.
-
-Margins are at 8, 11, 78
-
 # Differences Between AEDIT and Waedit
 
-The table below explains the major differences between Waedit and Intel's
-original AEDIT program.  The first column identifies the page or pages where
-the feature or behavior is documented in the AEDIT manual.  The second column
-briefly describes how AEDIT works, and the third column explains how Waedit
-differs from AEDIT.
+The table below explains the major differences between Waedit and Intel's original AEDIT program.  The first column identifies the page or pages where the feature or behavior is documented in the [AEDIT manual](aedit.pdf).  The second column briefly describes how AEDIT works, and the third column explains how Waedit differs from AEDIT.
 
 <table>
   <thead>
@@ -23,7 +13,7 @@ differs from AEDIT.
   <tbody>
     <tr>
       <td align="center">
-        <p>--</p>
+        <p>N/A</p>
       </td>
       <td>
         <p> AEDIT does not have a true Undo/Redo function.  </p>
@@ -46,7 +36,7 @@ differs from AEDIT.
     </tr>
     <tr>
       <td align="center">
-        <p>--</p>
+        <p>N/A</p>
       </td>
       <td>
         <p> AEDIT has no mouse support. </p>
@@ -492,7 +482,8 @@ differs from AEDIT.
         <p>Waedit does not implement the Kill_wnd command.  However, Waedit
            does have an entirely unrelated Kill command that provides for
            conditional execution within macros.  See the entries dated
-           September 18 and later in the notes.html file for details.  </p>
+           September 18 and later in the <a href="notes.html">notes.html</a>
+           file for details.  </p>
       </td>
     </tr>
     <tr>
@@ -687,7 +678,7 @@ differs from AEDIT.
       <td>
         <p> Some of the macros in <i>useful.mac</i> do not work with Waedit.
            To avoid confusion, <i>useful.mac</i> is not included with
-           Waedit.  Instead, the included file <i>examples.mac</i> contains
+           Waedit.  Instead, the included file <a href="..\src\examples.mac">examples.mac</a> contains
            examples of macros that do work with Waedit.  </p>
       </td>
     </tr>
@@ -716,8 +707,9 @@ differs from AEDIT.
       <td>
         <p> Waedit macros use a slightly different technique for simulating
            conditional branches and loops within macros.  The entries dated
-           September 18 and later in the notes.html file explain the technique
-           and give examples of its use.  The <i>examples.mac</i> file contains
+           September 18 and later in the <a href="notes.html">notes.html</a>
+           file explain the technique and give examples of its use.  The
+           <a href="..\src\examples.mac">examples.mac</a> file contains
            additional examples.  </p>
       </td>
     </tr>
