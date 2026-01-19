@@ -80,6 +80,7 @@
     <Compile Include="text.cs" />
     <Compile Include="undo.cs" />
     <Compile Include="utilities.cs" />
+    <Compile Include="vers.cs" />
     <EmbeddedResource Include="LineEditorForm.resx" />
     <EmbeddedResource Include="MainForm.resx" />
     <EmbeddedResource Include="Resources.resx" />

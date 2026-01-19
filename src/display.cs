@@ -620,11 +620,11 @@ void UpdateTitleBar()
 {
     if (currentFilename == "")
     {
-	this.Text = "Waedit 1.0 - Untitled";
+	this.Text = VERSION_STRING + " - Untitled";
     }
     else
     {
-	this.Text = "Waedit 1.0 - " + currentFilename;
+	this.Text = VERSION_STRING + " - " + currentFilename;
     }
 }
 
