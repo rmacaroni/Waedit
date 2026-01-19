@@ -44,8 +44,6 @@ This project is released under the MIT License - see the [LICENSE](LICENSE) file
 
 # Known Bugs
 
-- When Waedit displays a multi-line string in the status bar, the status bar expands vertically to accommodate the text, but never reverts to its original height.
-
 - The cursor is sometimes hidden by the status bar, depending on the font size and the vertical extent of the window.
 
 - Executing the Block command, followed by the Put subcommand, followed by Ctrl-C to abort the operation incorrectly sends the cursor to the beginning of the file.

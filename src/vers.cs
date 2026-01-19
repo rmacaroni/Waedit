@@ -15,7 +15,7 @@ namespace waedit
 
 partial class MainForm
 {
-    const string VERSION_STRING = "Waedit 1.0";
+    const string VERSION_STRING = "Waedit 1.1";
 }						// End partial class Mainform
 }                                               // End namespace waedit
 
