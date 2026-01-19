@@ -508,13 +508,16 @@ REVISIONS:       2 Aug 16 - RAC - Skeleton
 
 public void BuildScreenImage()
 {
-    int         line;                           // Screen line, 0 at top
+    int line;					// Screen line, 0 at top
+    int	extra;
 
     lock (screenImageLock)
     {
         screenImage.Clear();                    // Start with a clean slate
+	extra = Math.Max((cellHeight + 9) / 14, 2);
         linesOnScreen =                         // See how many lines will fit
-           editorPanel.Size.Height/cellHeight;	//  on the screen
+            (editorPanel.Size.Height - extra) /	//  on the screen
+            cellHeight;
 	charsOnScreen =
 	    editorPanel.Size.Width / cellWidth - 1;
         line = 0;                               // Start at the top screen line

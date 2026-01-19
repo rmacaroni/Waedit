@@ -44,6 +44,7 @@ public MainForm()
     InitializeComponent();
     editorPanel.MouseWheel += editorPanel_MouseWheel;
     statusStrip.AutoSize = false;
+    this.MinimumSize = new Size(300, 300);   // width, height
 }
 
 /* ////////////////////////////////////////////////////////////////////////////
