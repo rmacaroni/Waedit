@@ -46,7 +46,5 @@ This project is released under the MIT License - see the [LICENSE](LICENSE) file
 
 - The cursor is sometimes hidden by the status bar, depending on the font size and the vertical extent of the window.
 
-- Executing the Block command, followed by the Put subcommand, followed by Ctrl-C to abort the operation incorrectly sends the cursor to the beginning of the file.
-
 - See the entry in [this file](docs/diffs.md) for page 84 of the AEDIT manual.
 

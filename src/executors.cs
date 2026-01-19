@@ -1451,6 +1451,7 @@ void DoSelectDone(int herb)
 	    if (putAborted)
             {
 		DoSelectCtrlC();
+                return;
             }
 
 	    if (OkayToOverwrite(putFilename))

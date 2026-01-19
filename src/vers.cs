@@ -8,6 +8,8 @@ Version 1.0	17 Jan 26 - As published on GitHub on this date
 
 Versioh 1.1	?? ??? ?? - Disabled Autosize on the status strip so multi-line
 			     strings don't mess things up.
+                          - Fixed problem where B -> P -> Ctrl-C sent cursor to
+                             the beginning of the file.
 //////////////////////////////////////////////////////////////////////////// */
 
 namespace waedit
