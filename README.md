@@ -44,7 +44,5 @@ This project is released under the MIT License - see the [LICENSE](LICENSE) file
 
 # Known Bugs
 
-- The cursor is sometimes hidden by the status bar, depending on the font size and the vertical extent of the window.
-
 - See the entry in [this file](docs/diffs.md) for page 84 of the AEDIT manual.
 
