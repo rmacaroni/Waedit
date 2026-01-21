@@ -20,29 +20,37 @@ Waedit (think "AEDIT for Windows") is an "almost clone" of AEDIT that generally 
 
 - Waedit relaxes several other minor memory-related restrictions in AEDIT.
 
-# How Do I Compile and Run Waedit?
+## How Do I Compile and Run Waedit?
 
 The files in this repository support compilation from either within Visual Studio or from the command line.  To use Visual Studio, simply load the solution file (waedit.sln) into Visual Studio and build the project normally.  Alternatively, execute either gor.bat or god.bat from the command line to create the release or debug version, respectively.
 
 Waedit doesn't require any installation per se.  Just run the .EXE file in the normal fashion.
 
-# What if I Don't Want to Compile It?
+## What if I Don't Want to Compile It?
 
 Grab the pre-compiled .EXE and WAEDIT.MAC from the GitHub **Releases** page:
 
 https://github.com/rmacaroni/Waedit/releases
 
-# How Do I Use It?
+## How Do I Use It?
 
 If you have used AEDIT in the past, you will be instantly comfortable in Waedit.  Otherwise (or if you need a refresher), the [original AEDIT manual](docs/aedit.pdf) will get you started.  Once you're familiar with the basics, [this file](docs/diffs.md) details the differences between AEDIT and Waedit.
 
 In addition, [this file](https://rmacaroni.github.io/Waedit/notes.html) contains an informal development diary that explains some of the design and internal workings of Waedit.
 
-# What Can I Do With It?
+## What Can I Do With It?
 
-This project is released under the MIT License - see the [LICENSE](LICENSE) file for details.
+Pretty much anything you want ... this project is released under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-# Known Bugs
+## Issues Welcome
+
+Found a bug, have a suggestion, or want to share feedback?  Open an issue! Even comments and ideas are welcome.
+
+To open an issue:
+1. Click the **Issues** tab at the top of this repository
+2. Click **New issue**
+3. Add a short title and description, then submit
+
+## Known Bugs
 
 - See the entry in [this file](docs/diffs.md) for page 84 of the AEDIT manual.
-
