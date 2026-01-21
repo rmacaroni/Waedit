@@ -36,7 +36,7 @@ https://github.com/rmacaroni/Waedit/releases
 
 If you have used AEDIT in the past, you will be instantly comfortable in Waedit.  Otherwise (or if you need a refresher), the [original AEDIT manual](docs/aedit.pdf) will get you started.  Once you're familiar with the basics, [this file](docs/diffs.md) details the differences between AEDIT and Waedit.
 
-In addition, [this file](https://rmacaroni.github.io/Waedit/notes.html) contains an informal development diary that explains some of the design and internal workings of Waedit.
+In addition, [this file](https://rmacaroni.github.io/Waedit/index.html) contains an informal development diary that explains some of the design and internal workings of Waedit.
 
 ## What Can I Do With It?
 
